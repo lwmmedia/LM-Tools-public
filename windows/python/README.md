@@ -1,5 +1,5 @@
-# Python Scripts (Windows)
+# Scripts Python (Windows)
 
-This directory contains Python scripts and tools designed for or compatible with Windows systems.
+Ce répertoire contient des scripts Python et des outils conçus pour les systèmes Windows ou compatibles avec eux.
 
-Add your Python scripts here.
+Ajoutez vos scripts Python ici.

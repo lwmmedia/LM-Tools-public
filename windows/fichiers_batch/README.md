@@ -2,6 +2,6 @@
 
 Ce répertoire contient les fichiers batch (.bat, .cmd) pour Windows.
 
-This directory contains batch files (.bat, .cmd) for Windows systems.
+Ce répertoire contient des fichiers batch (.bat, .cmd) pour les systèmes Windows.
 
-Add your batch scripts here.
+Ajoutez vos scripts batch ici.
