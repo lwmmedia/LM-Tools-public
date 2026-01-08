@@ -1,5 +1,5 @@
-# PowerShell Scripts
+# Scripts PowerShell
 
-This directory contains PowerShell scripts (.ps1) for Windows systems.
+Ce répertoire contient des scripts PowerShell (.ps1) pour les systèmes Windows.
 
-Add your PowerShell scripts here.
+Ajoutez vos scripts PowerShell ici.

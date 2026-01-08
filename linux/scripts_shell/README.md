@@ -1,5 +1,5 @@
-# Shell Scripts
+# Scripts Shell
 
-This directory contains shell scripts for Linux systems.
+Ce répertoire contient des scripts shell pour les systèmes Linux.
 
-Add your bash, sh, and other shell scripts here.
+Ajoutez vos scripts bash, sh et autres scripts shell ici.

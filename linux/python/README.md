@@ -1,5 +1,5 @@
-# Python Scripts (Linux)
+# Scripts Python (Linux)
 
-This directory contains Python scripts and tools designed for or compatible with Linux systems.
+Ce répertoire contient des scripts Python et des outils conçus pour les systèmes Linux ou compatibles avec eux.
 
-Add your Python scripts here.
+Ajoutez vos scripts Python ici.

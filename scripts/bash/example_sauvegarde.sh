@@ -34,7 +34,7 @@ warning_msg() {
 
 # Vérifier les arguments
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <répertoire_à_sauvegarder> [destination]"
+    echo "Utilisation : $0 <répertoire_à_sauvegarder> [destination]"
     echo ""
     echo "Exemple: $0 /home/user/documents /backup"
     echo ""
