@@ -1,61 +1,55 @@
 # LM-Tools
 Outils informatiques et documentations diverses
 
-## Repository Structure
+## Structure du Répertoire
 
-This repository is organized by target platform to improve clarity and ease of navigation.
+Ce répertoire est organisé par plateforme cible afin d'offrir une navigation plus claire et intuitive.
 
-### Linux Tools (`/linux`)
+### Outils pour Linux (`/linux`)
 
-Tools and scripts designed for Linux systems:
+Outils et scripts conçus pour les systèmes Linux :
 
-- **`linux/scripts_shell/`** - Shell scripts (bash, sh, etc.)
-- **`linux/python/`** - Python scripts and tools for Linux
+- **`linux/scripts_shell/`** - Scripts Shell (bash, sh, etc.)
+- **`linux/python/`** - Scripts Python et outils pour Linux
 
-### Windows Tools (`/windows`)
+### Outils pour Windows (`/windows`)
 
-Tools and scripts designed for Windows systems:
+Outils et scripts conçus pour les systèmes Windows :
 
-- **`windows/fichiers_batch/`** - Batch files (.bat, .cmd)
-- **`windows/scripts_powershell/`** - PowerShell scripts (.ps1)
-- **`windows/python/`** - Python scripts and tools for Windows
+- **`windows/fichiers_batch/`** - Fichiers Batch (.bat, .cmd)
+- **`windows/scripts_powershell/`** - Scripts PowerShell (.ps1)
+- **`windows/python/`** - Scripts Python et outils pour Windows
 
-## Migration Guide
+## Guide de Migration
 
-### For New Contributions
+### Pour de Nouvelles Contributions
 
-When adding new tools or scripts, please place them in the appropriate directory based on:
+Lorsque vous ajoutez de nouveaux outils ou scripts, placez-les dans le bon répertoire selon :
+1. **Plateforme cible** : Choisissez `/linux` ou `/windows`
+2. **Type de script** : Choisissez le sous-répertoire correspondant selon le langage de script/technologie
 
-1. **Target Platform**: Choose `/linux` or `/windows`
-2. **Script Type**: Choose the appropriate subdirectory based on the scripting language/technology
+### Transition depuis une Structure Précédente
 
-### Transitioning from Previous Structure
-
-If you're working with an older version of this repository that used a different structure, here's how the directories map:
-
-**Old Structure → New Structure:**
-
+Si vous travaillez avec une version antérieure de ce répertoire ayant une structure différente, voici le mappage des anciens répertoires vers les nouveaux :
 - `windows/Batch/` → `windows/fichiers_batch/`
 - `windows/PowerShell/` → `windows/scripts_powershell/`
 
-**Migration Steps:**
+#### Étapes de Migration :
+1. Déplacez vos scripts batch de `windows/Batch/` vers `windows/fichiers_batch/`
+2. Déplacez vos scripts PowerShell de `windows/PowerShell/` vers `windows/scripts_powershell/`
+3. Placez les scripts Python dans le répertoire approprié à la plateforme :
+   - Scripts Python pour Linux → `linux/python/`
+   - Scripts Python pour Windows → `windows/python/`
+4. Mettez à jour toute documentation ou référence pointant vers les anciens chemins.
 
-1. Move your batch scripts from `windows/Batch/` to `windows/fichiers_batch/`
-2. Move your PowerShell scripts from `windows/PowerShell/` to `windows/scripts_powershell/`
-3. Place any Python scripts in the appropriate platform directory:
-   - Linux Python scripts → `linux/python/`
-   - Windows Python scripts → `windows/python/`
-4. Update any documentation or references to the old paths
+## Contributions
 
-## Contributing
+Lorsque vous contribuez à ce répertoire :
+1. Placez vos scripts dans le bon répertoire lié à la plateforme et à la technologie.
+2. Ajoutez une brève description ou commentaire expliquant à quoi sert votre script.
+3. Suivez les conventions de nommage utilisées dans chaque répertoire.
+4. Mettez à jour les fichiers README pertinents si vous ajoutez des fonctionnalités importantes.
 
-When contributing to this repository:
+## Utilisation
 
-1. Place your scripts in the correct platform and technology directory
-2. Include a brief description or comment explaining what your script does
-3. Follow the naming conventions used in each directory
-4. Update relevant README files if adding significant new functionality
-
-## Usage
-
-Each directory contains its own README with specific information about the tools contained within. Please refer to those READMEs for detailed usage instructions.
+Chaque répertoire contient son propre README avec des informations spécifiques sur les outils qui s'y trouvent. Veuillez vous référer à ces fichiers README pour des instructions détaillées sur l'utilisation.
