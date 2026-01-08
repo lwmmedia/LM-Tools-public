@@ -1,55 +1,100 @@
 # LM-Tools
-Outils informatiques et documentations diverses
 
-## Structure du Répertoire
+Un dépôt regroupant divers outils informatiques sous forme de scripts Windows, Python et Bash (Linux), accompagné de documentations variées.
 
-Ce répertoire est organisé par plateforme cible afin d'offrir une navigation plus claire et intuitive.
+**L'objectif** : fournir des ressources utiles pour la communauté.
 
-### Outils pour Linux (`/linux`)
+## 📁 Structure du Dépôt
 
-Outils et scripts conçus pour les systèmes Linux :
+Le dépôt utilise deux approches d'organisation complémentaires :
 
-- **`linux/scripts_shell/`** - Scripts Shell (bash, sh, etc.)
-- **`linux/python/`** - Scripts Python et outils pour Linux
+### Structure par Type de Script
 
-### Outils pour Windows (`/windows`)
+```
+LM-Tools/
+├── scripts/
+│   ├── windows/     # Scripts Windows (.bat, .ps1)
+│   ├── python/      # Scripts Python (.py)
+│   └── bash/        # Scripts Bash/Linux (.sh)
+├── docs/            # Documentation
+└── examples/        # Exemples d'utilisation
+```
 
-Outils et scripts conçus pour les systèmes Windows :
+### Structure par Plateforme
 
-- **`windows/fichiers_batch/`** - Fichiers Batch (.bat, .cmd)
-- **`windows/scripts_powershell/`** - Scripts PowerShell (.ps1)
-- **`windows/python/`** - Scripts Python et outils pour Windows
+- **`/linux`** - Outils organisés pour les systèmes Linux
+  - `linux/scripts_shell/` - Scripts Shell (bash, sh, etc.)
+  - `linux/python/` - Scripts Python pour Linux
 
-## Guide de Migration
+- **`/windows`** - Outils organisés pour les systèmes Windows
+  - `windows/fichiers_batch/` - Fichiers Batch (.bat, .cmd)
+  - `windows/scripts_powershell/` - Scripts PowerShell (.ps1)
+  - `windows/python/` - Scripts Python pour Windows
 
-### Pour de Nouvelles Contributions
+## 🛠️ Outils Disponibles
 
-Lorsque vous ajoutez de nouveaux outils ou scripts, placez-les dans le bon répertoire selon :
-1. **Plateforme cible** : Choisissez `/linux` ou `/windows`
-2. **Type de script** : Choisissez le sous-répertoire correspondant selon le langage de script/technologie
+### Script de Maintenance Windows 10/11
 
-### Transition depuis une Structure Précédente
+Un script PowerShell sécurisé pour effectuer des opérations de maintenance système sur Windows 10 et Windows 11.
 
-Si vous travaillez avec une version antérieure de ce répertoire ayant une structure différente, voici le mappage des anciens répertoires vers les nouveaux :
+**Fichiers :**
+- `Windows-Maintenance.ps1` - Script PowerShell principal
+- `Lancer-Maintenance.bat` - Lanceur simple pour faciliter l'exécution
+- `README-Windows-Maintenance.md` - Documentation complète
+
+**Fonctionnalités :**
+- ✅ Nettoyage des fichiers temporaires
+- ✅ Nettoyage de disque Windows
+- ✅ Vérification des fichiers système (SFC)
+- ✅ Réparation de l'image système (DISM)
+- ✅ Vérification de Windows Update
+- ✅ Journalisation complète de toutes les opérations
+- ✅ Menu interactif avec plusieurs modes de fonctionnement
+
+**Utilisation Rapide :**
+1. Téléchargez les fichiers
+2. Double-cliquez sur `Lancer-Maintenance.bat` OU
+3. Exécutez `Windows-Maintenance.ps1` dans PowerShell en tant qu'administrateur
+
+📖 **[Voir la documentation complète](README-Windows-Maintenance.md)**
+
+## 🚀 Utilisation
+
+### Scripts Windows
+Les scripts Windows se trouvent dans `scripts/windows/` et `windows/` et peuvent être exécutés sur les systèmes Windows.
+
+### Scripts Python
+Les scripts Python se trouvent dans `scripts/python/`. Assurez-vous d'avoir Python installé sur votre système.
+
+### Scripts Bash
+Les scripts Bash se trouvent dans `scripts/bash/` et `linux/scripts_shell/` et sont destinés aux systèmes Linux/Unix.
+
+## 📚 Documentation
+
+La documentation complète se trouve dans le dossier `docs/`. Chaque répertoire contient également son propre README avec des informations spécifiques.
+
+## 🤝 Contributions
+
+Les contributions sont les bienvenues ! Lorsque vous contribuez à ce répertoire :
+
+1. **Choisissez la structure appropriée** :
+   - Pour des scripts simples : utilisez `/scripts/[type]/`
+   - Pour des outils spécifiques à une plateforme : utilisez `/linux/` ou `/windows/`
+
+2. Ajoutez une brève description ou commentaire expliquant à quoi sert votre script
+3. Suivez les conventions de nommage utilisées dans chaque répertoire
+4. Mettez à jour les fichiers README pertinents si vous ajoutez des fonctionnalités importantes
+
+### Guide de Migration
+
+Si vous travaillez avec une version antérieure de ce répertoire ayant une structure différente :
 - `windows/Batch/` → `windows/fichiers_batch/`
 - `windows/PowerShell/` → `windows/scripts_powershell/`
 
-#### Étapes de Migration :
-1. Déplacez vos scripts batch de `windows/Batch/` vers `windows/fichiers_batch/`
-2. Déplacez vos scripts PowerShell de `windows/PowerShell/` vers `windows/scripts_powershell/`
-3. Placez les scripts Python dans le répertoire approprié à la plateforme :
-   - Scripts Python pour Linux → `linux/python/`
-   - Scripts Python pour Windows → `windows/python/`
-4. Mettez à jour toute documentation ou référence pointant vers les anciens chemins.
+## 📋 À Propos
 
-## Contributions
+Ce projet est destiné à la communauté et vise à fournir des ressources utiles pour faciliter la maintenance et la gestion des systèmes.
 
-Lorsque vous contribuez à ce répertoire :
-1. Placez vos scripts dans le bon répertoire lié à la plateforme et à la technologie.
-2. Ajoutez une brève description ou commentaire expliquant à quoi sert votre script.
-3. Suivez les conventions de nommage utilisées dans chaque répertoire.
-4. Mettez à jour les fichiers README pertinents si vous ajoutez des fonctionnalités importantes.
+## 📄 Licence
 
-## Utilisation
-
-Chaque répertoire contient son propre README avec des informations spécifiques sur les outils qui s'y trouvent. Veuillez vous référer à ces fichiers README pour des instructions détaillées sur l'utilisation.
+Ce projet est destiné à la communauté et vise à fournir des ressources utiles.

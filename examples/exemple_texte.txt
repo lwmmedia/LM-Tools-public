@@ -1,0 +1,19 @@
+Bonjour et bienvenue dans LM-Tools !
+
+Ce fichier est un exemple de texte pour tester les scripts d'analyse.
+Vous pouvez utiliser ce fichier avec le script example_analyse_texte.py.
+
+LM-Tools est un projet communautaire qui vise à fournir des outils utiles
+pour faciliter diverses tâches informatiques. Le projet comprend des scripts
+Windows, Python et Bash pour différentes plateformes.
+
+Les outils disponibles couvrent plusieurs domaines :
+- Analyse de fichiers
+- Informations système
+- Sauvegarde de données
+- Calculatrices et utilitaires divers
+
+N'hésitez pas à contribuer avec vos propres scripts et outils !
+La communauté est au cœur de ce projet.
+
+Merci d'utiliser LM-Tools !
