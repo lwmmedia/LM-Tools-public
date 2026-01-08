@@ -1,8 +1,8 @@
-# Linux Tools
+# Outils pour Linux
 
-This directory contains tools and scripts designed for Linux systems.
+Ce répertoire contient des outils et des scripts conçus pour les systèmes Linux.
 
 ## Structure
 
-- **scripts_shell/**: Shell scripts (bash, sh, etc.) for Linux
-- **python/**: Python scripts and tools for Linux
+- **scripts_shell/** : Scripts Shell (bash, sh, etc.) pour Linux
+- **python/** : Scripts Python et outils pour Linux
