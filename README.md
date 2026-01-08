@@ -4,11 +4,26 @@ Un dépôt regroupant divers outils informatiques sous forme de scripts Windows,
 
 **L'objectif** : fournir des ressources utiles pour la communauté.
 
-## 📁 Structure du Dépôt
+## 📁 Structure du Dépôt (explication simple)
 
-Le dépôt utilise deux approches d'organisation complémentaires :
+Le dépôt est organisé **deux fois** pour vous laisser choisir la façon la plus facile pour vous :
 
-### Structure par Type de Script
+1. **Par type de script** (si vous cherchez un langage précis).
+2. **Par plateforme** (si vous savez sur quel système vous travaillez).
+
+### ✅ Où chercher en premier ?
+
+| Vous cherchez... | Allez dans... |
+| --- | --- |
+| Un script Windows (batch ou PowerShell) | `scripts/windows/` |
+| Un script Python (tous systèmes) | `scripts/python/` |
+| Un script Bash/Linux | `scripts/bash/` |
+| Un outil Linux spécifique | `linux/` |
+| Un outil Windows spécifique | `windows/` |
+| De la documentation | `docs/` |
+| Des exemples | `examples/` |
+
+### Structure par Type de Script (la plus simple pour débuter)
 
 ```
 LM-Tools/
@@ -20,7 +35,7 @@ LM-Tools/
 └── examples/        # Exemples d'utilisation
 ```
 
-### Structure par Plateforme
+### Structure par Plateforme (si vous partez d’un OS précis)
 
 - **`/linux`** - Outils organisés pour les systèmes Linux
   - `linux/scripts_shell/` - Scripts Shell (bash, sh, etc.)
@@ -30,6 +45,12 @@ LM-Tools/
   - `windows/fichiers_batch/` - Fichiers Batch (.bat, .cmd)
   - `windows/scripts_powershell/` - Scripts PowerShell (.ps1)
   - `windows/python/` - Scripts Python pour Windows
+
+### 🧭 Exemple rapide (débutant)
+
+- **Vous êtes sur Windows** et cherchez un outil de maintenance :
+  - Commencez par `scripts/windows/`
+  - Si l’outil est très spécifique, regardez aussi dans `windows/`
 
 ## 🛠️ Outils Disponibles
 
