@@ -61,14 +61,15 @@ echo ""
 
 # Créer l'archive
 warning_msg "Création de la sauvegarde en cours..."
-if tar -czf "$BACKUP_PATH" -C "$(dirname "$SOURCE_DIR")" "$(basename "$SOURCE_DIR")" 2>/dev/null; then
+ERROR_MSG=$(tar -czf "$BACKUP_PATH" -C "$(dirname "$SOURCE_DIR")" "$(basename "$SOURCE_DIR")" 2>&1)
+if [ $? -eq 0 ]; then
     BACKUP_SIZE=$(du -h "$BACKUP_PATH" | cut -f1)
     success_msg "Sauvegarde créée avec succès!"
     echo ""
     echo "Fichier: $BACKUP_PATH"
     echo "Taille: $BACKUP_SIZE"
 else
-    error_exit "Échec de la création de la sauvegarde."
+    error_exit "Échec de la création de la sauvegarde: $ERROR_MSG"
 fi
 
 echo ""
