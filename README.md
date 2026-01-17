@@ -1,121 +1,52 @@
-# LM-Tools
+# 🛠️ LM-Tools
 
-Un dépôt regroupant divers outils informatiques sous forme de scripts Windows, Python et Bash (Linux), accompagné de documentations variées.
+[![PowerShell Quality](https://github.com/lwmmedia/LM-Tools/actions/workflows/powershell.yml/badge.svg)](https://github.com/lwmmedia/LM-Tools/actions/workflows/powershell.yml)
+[![Python Code Quality](https://github.com/lwmmedia/LM-Tools/actions/workflows/python.yml/badge.svg)](https://github.com/lwmmedia/LM-Tools/actions/workflows/python.yml)
+[![ShellCheck](https://github.com/lwmmedia/LM-Tools/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/lwmmedia/LM-Tools/actions/workflows/shellcheck.yml)
 
-**L'objectif** : fournir des ressources utiles pour la communauté.
+**LM-Tools** est un dépôt communautaire regroupant des scripts d'automatisation, de maintenance et des utilitaires système pour Windows et Linux. L'objectif est de fournir des ressources fiables, documentées et sécurisées pour faciliter les tâches informatiques quotidiennes.
 
-## 📁 Structure du Dépôt (explication simple)
+## 🚀 Outils Principaux
 
-Le dépôt est organisé **deux fois** pour vous laisser choisir la façon la plus facile pour vous :
+| Outil | Système | Langage | Description |
+| :--- | :--- | :--- | :--- |
+| **Windows Maintenance** | 🪟 Win 10/11 | PowerShell | Maintenance complète : SFC, DISM, nettoyage disque et fichiers temporaires. |
+| **System Info (Linux)** | 🐧 Linux | Bash | Affiche l'utilisateur, l'OS, le kernel, l'uptime et l'utilisation des ressources. |
+| **Analyseur de Texte** | 🐍 Multi | Python | Génère des statistiques (lignes, mots, fréquences) sur un fichier texte. |
+| **Calculatrice CLI** | 🐍 Multi | Python | Utilitaire de calcul simple en ligne de commande. |
 
-1. **Par type de script** (si vous cherchez un langage précis).
-2. **Par plateforme** (si vous savez sur quel système vous travaillez).
+## 📂 Structure du Dépôt
 
-### ✅ Où chercher en premier ?
+Le projet est organisé pour être accessible selon votre préférence (par type de script ou par plateforme) :
 
-| Vous cherchez... | Allez dans... |
-| --- | --- |
-| Un script Windows (batch ou PowerShell) | `scripts/windows/` |
-| Un script Python (tous systèmes) | `scripts/python/` |
-| Un script Bash/Linux | `scripts/bash/` |
-| Un outil Linux spécifique | `linux/` |
-| Un outil Windows spécifique | `windows/` |
-| De la documentation | `docs/` |
-| Des exemples | `examples/` |
+* **[`/scripts`](./scripts)** : Dossier principal contenant les scripts classés par langage : [`bash`](./scripts/bash), [`python`](./scripts/python) et [`windows`](./scripts/windows).
+* **[`/linux`](./linux) & [`/windows`](./windows)** : Sections dédiées regroupant les outils spécifiques à chaque système d'exploitation.
+* **[`/docs`](./docs)** : Documentation complète, incluant les [guides de démarrage](./docs/guide-demarrage.md) et de [contribution](./docs/contribution.md).
+* **[`/examples`](./examples)** : Fichiers de test (comme [`exemple_texte.txt`](./examples/exemple_texte.txt)) pour essayer les scripts immédiatement.
 
-### Structure par Type de Script (la plus simple pour débuter)
+## 🛠️ Utilisation Rapide
 
-```
-LM-Tools/
-├── scripts/
-│   ├── windows/     # Scripts Windows (.bat, .ps1)
-│   ├── python/      # Scripts Python (.py)
-│   └── bash/        # Scripts Bash/Linux (.sh)
-├── docs/            # Documentation
-└── examples/        # Exemples d'utilisation
-```
+1.  **Clonage du dépôt** :
+    ```bash
+    git clone [https://github.com/lwmmedia/LM-Tools.git](https://github.com/lwmmedia/LM-Tools.git)
+    cd LM-Tools
+    ```
+2.  **Maintenance Windows** : Exécutez simplement [`Lancer-Maintenance.bat`](./Lancer-Maintenance.bat) (nécessite des droits administrateur).
+3.  **Scripts Python** : Installez Python 3.6+ et lancez vos scripts via `python nom_du_script.py`.
+4.  **Scripts Bash** : Rendez le script exécutable avec `chmod +x` avant de le lancer.
 
-### Structure par Plateforme (si vous partez d’un OS précis)
+## 🛡️ Sécurité et Qualité
 
-- **`/linux`** - Outils organisés pour les systèmes Linux
-  - `linux/scripts_shell/` - Scripts Shell (bash, sh, etc.)
-  - `linux/python/` - Scripts Python pour Linux
+* **Validation Automatique** : Chaque modification est analysée par PSScriptAnalyzer (PowerShell), Ruff (Python) et ShellCheck (Bash) via GitHub Actions.
+* **Mode Strict** : Les scripts sensibles (ex: Maintenance) utilisent `Set-StrictMode` pour garantir une exécution prévisible.
+* **Transparence** : Tous les scripts sont open-source, commentés et génèrent des journaux (logs) détaillés pour les opérations critiques.
 
-- **`/windows`** - Outils organisés pour les systèmes Windows
-  - `windows/fichiers_batch/` - Fichiers Batch (.bat, .cmd)
-  - `windows/scripts_powershell/` - Scripts PowerShell (.ps1)
-  - `windows/python/` - Scripts Python pour Windows
+## 🤝 Contribution
 
-### 🧭 Exemple rapide (débutant)
+Les contributions sont les bienvenues ! Pour proposer un script ou une amélioration :
+1. Consultez le **[Guide de contribution](./docs/contribution.md)**.
+2. Respectez les standards de qualité (en-tête de description, commentaires et tests).
+3. Ouvrez une Pull Request sur une branche dédiée.
 
-- **Vous êtes sur Windows** et cherchez un outil de maintenance :
-  - Commencez par `scripts/windows/`
-  - Si l’outil est très spécifique, regardez aussi dans `windows/`
-
-## 🛠️ Outils Disponibles
-
-### Script de Maintenance Windows 10/11
-
-Un script PowerShell sécurisé pour effectuer des opérations de maintenance système sur Windows 10 et Windows 11.
-
-**Fichiers :**
-- `Windows-Maintenance.ps1` - Script PowerShell principal
-- `Lancer-Maintenance.bat` - Lanceur simple pour faciliter l'exécution
-- `README-Windows-Maintenance.md` - Documentation complète
-
-**Fonctionnalités :**
-- ✅ Nettoyage des fichiers temporaires
-- ✅ Nettoyage de disque Windows
-- ✅ Vérification des fichiers système (SFC)
-- ✅ Réparation de l'image système (DISM)
-- ✅ Vérification de Windows Update
-- ✅ Journalisation complète de toutes les opérations
-- ✅ Menu interactif avec plusieurs modes de fonctionnement
-
-**Utilisation Rapide :**
-1. Téléchargez les fichiers
-2. Double-cliquez sur `Lancer-Maintenance.bat` OU
-3. Exécutez `Windows-Maintenance.ps1` dans PowerShell en tant qu'administrateur
-
-📖 **[Voir la documentation complète](README-Windows-Maintenance.md)**
-
-## 🚀 Utilisation
-
-### Scripts Windows
-Les scripts Windows se trouvent dans `scripts/windows/` et `windows/` et peuvent être exécutés sur les systèmes Windows.
-
-### Scripts Python
-Les scripts Python se trouvent dans `scripts/python/`. Assurez-vous d'avoir Python installé sur votre système.
-
-### Scripts Bash
-Les scripts Bash se trouvent dans `scripts/bash/` et `linux/scripts_shell/` et sont destinés aux systèmes Linux/Unix.
-
-## 📚 Documentation
-
-La documentation complète se trouve dans le dossier `docs/`. Chaque répertoire contient également son propre README avec des informations spécifiques.
-
-## 🤝 Contributions
-
-Les contributions sont les bienvenues ! Lorsque vous contribuez à ce répertoire :
-
-1. **Choisissez la structure appropriée** :
-   - Pour des scripts simples : utilisez `/scripts/[type]/`
-   - Pour des outils spécifiques à une plateforme : utilisez `/linux/` ou `/windows/`
-
-2. Ajoutez une brève description ou commentaire expliquant à quoi sert votre script
-3. Suivez les conventions de nommage utilisées dans chaque répertoire
-4. Mettez à jour les fichiers README pertinents si vous ajoutez des fonctionnalités importantes
-
-### Guide de Migration
-
-Si vous travaillez avec une version antérieure de ce répertoire ayant une structure différente :
-- `windows/Batch/` → `windows/fichiers_batch/`
-- `windows/PowerShell/` → `windows/scripts_powershell/`
-
-## 📋 À Propos
-
-Ce projet est destiné à la communauté et vise à fournir des ressources utiles pour faciliter la maintenance et la gestion des systèmes.
-
-## 📄 Licence
-
-Ce projet est destiné à la communauté et vise à fournir des ressources utiles.
+---
+**Développé par la communauté LM-Tools** | 2026
