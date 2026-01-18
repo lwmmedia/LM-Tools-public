@@ -49,4 +49,4 @@ Les contributions sont les bienvenues ! Pour proposer un script ou une améliora
 3. Ouvrez une Pull Request sur une branche dédiée.
 
 ---
-**Développé par la communauté LM-Tools** | 2026
+**Développé par la communauté LM-Tools** | 2026 avec l'active participation de Laurent MARQUET.
