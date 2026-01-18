@@ -14,8 +14,8 @@ Utilisateur cible :
 - Toute personne ayant besoin d'optimiser des collections de photos de manière rapide et efficace avec une interface simple.
 
 Dépendances :
-- Pillow pour traitement des images (https://python-pillow.org/).
 - tkinter (standard dans les distributions Python) pour la GUI.
+- Pillow pour traitement des images (https://python-pillow.org/) - sera nécessaire lors de l'implémentation complète.
 
 Usage :
 - Lancer ce script directement pour ouvrir l'interface utilisateur (GUI).
