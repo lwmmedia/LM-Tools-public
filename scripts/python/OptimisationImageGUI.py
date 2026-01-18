@@ -14,8 +14,8 @@ Utilisateur cible :
 - Toute personne ayant besoin d'optimiser des collections de photos de manière rapide et efficace avec une interface simple.
 
 Dépendances :
-- Pillow pour traitement des images (https://python-pillow.org/).
 - tkinter (standard dans les distributions Python) pour la GUI.
+- Pillow pour traitement des images (https://python-pillow.org/) - sera nécessaire lors de l'implémentation complète.
 
 Usage :
 - Lancer ce script directement pour ouvrir l'interface utilisateur (GUI).
@@ -25,20 +25,14 @@ Auteur : Laurent MARQUET avec Copilot GitHub
 Date : 2026
 """
 
-import os
-import sys
 import threading
-from pathlib import Path
-from datetime import datetime
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
-from tkinter.scrolledtext import ScrolledText
-
-from PIL import Image, ImageOps
+from tkinter import ttk
 
 # Titre de l'application
 APP_TITLE = "Optimiseur d'images JPG - GUI"
 SUPPORTED_EXTS = (".jpg", ".jpeg", ".JPG", ".JPEG")
+
 
 class ImageOptimizerGUI(tk.Tk):
     """Classe principale pour l'interface graphique d'optimisation d'images.
@@ -47,6 +41,7 @@ class ImageOptimizerGUI(tk.Tk):
     Les utilisateurs peuvent configurer le traitement des images via des champs
     et des cases à cocher.
     """
+
     def __init__(self):
         super().__init__()
         self.title(APP_TITLE)
@@ -61,7 +56,9 @@ class ImageOptimizerGUI(tk.Tk):
         self.var_max_side = tk.IntVar(value=1920)
         self.var_convert_webp = tk.BooleanVar(value=False)
         self.var_overwrite = tk.BooleanVar(value=False)
-        self.var_keep_jpeg = tk.BooleanVar(value=True)  # garder JPEG même si conversion WebP activée
+        self.var_keep_jpeg = tk.BooleanVar(
+            value=True
+        )  # garder JPEG même si conversion WebP activée
         self.var_progress_text = tk.StringVar(value="En attente…")
 
         self.stop_event = threading.Event()
