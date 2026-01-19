@@ -28,7 +28,6 @@ Date : 2026
 import os
 import threading
 from pathlib import Path
-from datetime import datetime
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, ttk
 
