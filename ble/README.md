@@ -7,159 +7,149 @@
 
 ---
 
-# Overview
+# 🇫🇷 PRÉSENTATION
 
-BLE Internal Analyzer is a Web Bluetooth-based diagnostic tool designed for controlled technical environments.
+**BLE Internal Analyzer** est un outil technique interne basé sur Web Bluetooth permettant l’analyse et l’interaction avec des périphériques Bluetooth Low Energy (BLE).
 
-It provides low-level BLE interaction for:
+Il est destiné à un usage professionnel contrôlé : diagnostic, validation firmware, audit IoT, analyse GATT.
 
-- GATT inspection
-- Characteristic read/write
-- Notification monitoring
-- Session capture
-- Protocol analysis
-- Firmware validation
-
-This tool is strictly intended for internal technical use.
+⚠ Cet outil n’est pas conçu pour un déploiement en production ni pour un usage grand public.
 
 ---
 
-# Scope
+# 🇬🇧 OVERVIEW
 
-## Intended Use
+**BLE Internal Analyzer** is an internal technical tool based on Web Bluetooth enabling interaction with Bluetooth Low Energy (BLE) devices.
 
-- BLE device diagnostics
-- Firmware testing (ESP32 / IoT / custom boards)
-- GATT structure inspection
-- Controlled reverse engineering
-- IoT audit and validation
-- Mesh BLE protocol observation
+It is intended for controlled professional use: diagnostics, firmware validation, IoT audit, and GATT inspection.
 
-## Not Intended For
-
-- Production control systems
-- Public-facing deployment
-- Industrial command interfaces
-- RF certification or compliance testing
+⚠ This tool is not intended for production deployment or public use.
 
 ---
 
-# Architecture
+# 🇫🇷 ARCHITECTURE
 
 ble/
-├── blue.html → Main application (UI + BLE logic)
-├── utils.js → Helpers (buffers, logging, export)
-├── parsers.js → Protocol decoding layer
+├── blue.html → Application principale (UI + logique BLE)
+├── utils.js → Fonctions utilitaires (buffers, export)
+├── parsers.js → Couche de décodage protocolaire
 └── README.md
 
 
-## Component Responsibilities
+### Composants
 
-### blue.html
-- Web Bluetooth interface
-- GATT inventory
-- Command execution
-- Profiling
-- Logging
-- Export features
-
-### utils.js
-- Buffer conversion (HEX / ASCII)
-- Safe read helpers
-- CSV formatting
-- File export handling
-- UUID formatting
-
-### parsers.js
-- Decoding abstraction layer
-- Service-specific parsing logic
-- Extendable protocol interpretation
+- **blue.html** : Interface utilisateur et gestion Web Bluetooth
+- **utils.js** : Conversion HEX/ASCII, export JSON/CSV
+- **parsers.js** : Décodage des caractéristiques (extensible)
 
 ---
 
-# Functional Capabilities
+# 🇬🇧 ARCHITECTURE
 
-## 1. GATT Inventory
+ble/
+├── blue.html
+├── utils.js
+├── parsers.js
+└── README.md
 
-- Lists primary services
-- Lists characteristics and properties
-- Attempts descriptor enumeration
-- Performs best-effort sample read
-- Structured technical output
+
+### Components
+
+- **blue.html**: Web Bluetooth UI and logic
+- **utils.js**: Buffer conversion and export utilities
+- **parsers.js**: Extendable protocol decoding layer
 
 ---
 
-## 2. Read / Write Operations
+# 🇫🇷 FONCTIONNALITÉS
 
-Supports:
+## Inventaire GATT
+- Liste des services primaires
+- Liste des caractéristiques et propriétés
+- Tentative de lecture initiale si autorisée
+- Affichage technique structuré
 
-- `read`
-- `write`
-- `writeWithoutResponse`
-- `notify`
-- `indicate`
+## Lecture / Écriture
+Support :
+- read
+- write
+- writeWithoutResponse
+- notify
+- indicate
 
-Write payload formats:
-
+Formats :
 - HEX (`01 02 ff`)
 - ASCII (`HELLO`)
 
-⚠ Write operations may alter device state.
+⚠ L’écriture peut modifier le comportement du périphérique.
+
+## Notifications
+- Capture temps réel
+- Compteur d’événements
+- Temps jusqu’à première notification
+- Journalisation complète
+
+## Export
+- JSON : session complète (métadonnées + inventaire + événements)
+- CSV : flux d’événements exploitable
 
 ---
 
-## 3. Notification Monitoring
+# 🇬🇧 FEATURES
 
+## GATT Inventory
+- Primary services listing
+- Characteristics and properties
+- Sample read when permitted
+- Structured technical output
+
+## Read / Write
+Supports:
+- read
+- write
+- writeWithoutResponse
+- notify
+- indicate
+
+Formats:
+- HEX (`01 02 ff`)
+- ASCII (`HELLO`)
+
+⚠ Writing may alter device behavior.
+
+## Notifications
 - Real-time capture
-- Notification counter
-- Time to first notification
-- Payload size logging
-- Automatic session logging
-
----
-
-## 4. Profiling
-
-Captures:
-
-- Connection time (ms)
-- GATT inventory duration
+- Event counter
 - First notification latency
-- Total notification count
+- Full logging
 
-Useful for firmware stability validation.
-
----
-
-## 5. Session Export
-
-### JSON Export
-Includes:
-
-- Session metadata
-- Device information
-- Profiling data
-- GATT inventory snapshot
-- Full event log
-
-### CSV Export
-Exports event stream:
-
-- Timestamp
-- Event type
-- Service UUID
-- Characteristic UUID
-- HEX payload
-- ASCII payload
-- Decoded data (if available)
+## Export
+- JSON: full session capture
+- CSV: event stream export
 
 ---
 
-# Deployment
+# 🇫🇷 DÉPLOIEMENT
+
+Web Bluetooth nécessite HTTPS.
+
+URL recommandée :
+
+https://lwmmedia.github.io/LM-Tools-public/ble/blue.html
+
+
+Ouverture directe Bluefy :
+
+bluefy://open?url=https://lwmmedia.github.io/LM-Tools-public/ble/blue.html
+
+
+---
+
+# 🇬🇧 DEPLOYMENT
 
 Web Bluetooth requires HTTPS.
 
-Recommended:
+Recommended URL:
 
 https://lwmmedia.github.io/LM-Tools-public/ble/blue.html
 
@@ -167,89 +157,89 @@ https://lwmmedia.github.io/LM-Tools-public/ble/blue.html
 Bluefy direct launch:
 
 
-
 bluefy://open?url=https://lwmmedia.github.io/LM-Tools-public/ble/blue.html
 
 
 ---
 
-# Security & Compliance
+# 🇫🇷 SÉCURITÉ & RGPD
 
-## Operational Risks
+Les exports peuvent contenir :
+- Identifiants BLE persistants
+- Numéros de série
+- Données techniques corrélables à une personne
 
-- Write operations may reconfigure devices.
-- Continuous notifications may increase power usage.
-- Captured data may contain persistent identifiers.
+En environnement réglementé (école, collectivité, entreprise) :
+
+- Vérifier la base légale du traitement
+- Appliquer le principe de minimisation
+- Sécuriser les fichiers exportés
+- Définir une durée de conservation
+
+L’outil ne transmet aucune donnée vers un serveur externe.
 
 ---
 
-## GDPR Considerations
+# 🇬🇧 SECURITY & GDPR
 
-Exports may include:
-
-- Device IDs
-- Serial numbers
+Exports may contain:
 - Persistent BLE identifiers
-- Telemetry potentially linkable to individuals
+- Serial numbers
+- Technical telemetry potentially linkable to individuals
 
-When used in regulated environments (schools, public institutions, enterprises):
+In regulated environments:
 
-- Ensure lawful basis for processing
+- Ensure lawful basis
 - Apply data minimization
 - Secure exported files
-- Define retention policy
-- Avoid public distribution of raw captures
+- Define retention policies
 
 The tool does not transmit data externally.
 
 ---
 
-# Technical Limitations
+# 🇫🇷 LIMITATIONS
 
-- BLE only (no classic Bluetooth BR/EDR)
-- No RF sniffing
-- iOS picker required
-- Descriptor access may be restricted
-- Browser security constraints apply
-- No passive background scanning
+- BLE uniquement (pas Bluetooth classique)
+- Pas de sniff radio
+- Sélecteur iOS obligatoire
+- Accès partiel aux descriptors
+- Contraintes de sécurité navigateur
 
 ---
 
-# Extending the Parser
+# 🇬🇧 LIMITATIONS
 
-To add protocol decoding:
+- BLE only (no classic Bluetooth)
+- No RF sniffing
+- iOS picker required
+- Partial descriptor access
+- Browser security restrictions apply
 
-Edit `parsers.js`.
+---
 
-Example:
+# 🇫🇷 AVERTISSEMENT
 
-```javascript
-if (svc === "custom_service_uuid" && ch === "custom_char_uuid") {
-  return {
-    field1: dv.getUint8(0),
-    field2: dv.getUint16(1, true)
-  };
-}
-Custom decoders enable structured protocol interpretation.
+Outil fourni « en l’état », sans garantie.
 
-Liability Disclaimer
+L’auteur ne peut être tenu responsable de :
+- Dysfonctionnement matériel
+- Perte de données
+- Usage non conforme
+- Non-respect réglementaire
 
-This tool is provided “as is” without warranty.
+Usage sous votre entière responsabilité.
+
+---
+
+# 🇬🇧 DISCLAIMER
+
+Provided “as is” without warranty.
 
 The author shall not be liable for:
+- Device malfunction
+- Data loss
+- Misuse
+- Regulatory non-compliance
 
-Device malfunction
-
-Data loss
-
-Regulatory violations
-
-Indirect or consequential damages
-
-Use is entirely at your own risk.
-
-Status
-
-Internal technical utility
-Not approved for production deployment
-BLE diagnostic environment only
+Use entirely at your own risk.
