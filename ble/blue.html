@@ -134,6 +134,7 @@
     } from './utils.js';
 
     import { decodeValue } from './parsers.js';
+    import { createBleCommandHandlers } from './commands.js';
 
     const $ = (id) => document.getElementById(id);
 
@@ -198,6 +199,7 @@
     let inventoryT0 = 0;
     let firstNotifySet = false;
     let notifCount = 0;
+
 
     function uiSetState(s) { devState.textContent = s; }
 
@@ -416,141 +418,45 @@
       onDisconnected();
     }
 
-    function getCharByUuid(uuid) {
-      // Fetch on-demand: iterate services and try getCharacteristic where possible
-      // This avoids caching actual characteristic objects in session (serializable).
-      return (async () => {
-        const u = (uuid || "").trim().toLowerCase();
-        if (!u) throw new Error("Characteristic UUID vide.");
+    const { cmdRead, cmdWrite, cmdNotifyOn, cmdNotifyOff } = createBleCommandHandlers({
+      getServer: () => server,
+      getCmdCharUuid: () => cmdCharUuid.value.trim(),
+      getCmdWriteMode: () => cmdWriteMode.value,
+      getCmdWriteType: () => cmdWriteType.value,
+      getCmdWriteData: () => cmdWriteData.value || "",
+      setCmdOut: (text) => { cmdOut.textContent = text; },
+      log,
+      decodeValue,
+      safeReadValue,
+      hexFromBuf,
+      asciiFromBuf,
+      bufFromHex,
+      bufFromAscii,
+      clampStr,
+      onNotify: ({ svcUuid, chUuid, buf, hx, asc, decoded, size }) => {
+        notifCount += 1;
+        notifCountEl.textContent = String(notifCount);
 
-        const services = await server.getPrimaryServices();
-        for (const svc of services) {
-          try {
-            const ch = await svc.getCharacteristic(u);
-            if (ch) return { svc, ch };
-          } catch (_) { /* continue */ }
+        if (!firstNotifySet) {
+          firstNotifySet = true;
+          const ms = Math.round(performance.now() - connectT0);
+          session.profiling.firstNotifyMs = ms;
+          tFirstNotif.textContent = `${ms} ms`;
         }
-        throw new Error("Characteristic introuvable via getCharacteristic (UUID ou droits).");
-      })();
-    }
 
-    async function cmdRead() {
-      if (!server?.connected) return;
-      const u = cmdCharUuid.value.trim();
-      try {
-        const { svc, ch } = await getCharByUuid(u);
-        if (!ch.properties.read) throw new Error("Lecture non supportée par cette caractéristique.");
-        const buf = await safeReadValue(ch);
-        if (!buf) throw new Error("Lecture impossible (droits/erreur).");
-
-        const hx = hexFromBuf(buf);
-        const asc = asciiFromBuf(buf);
-        const decoded = decodeValue(svc.uuid, ch.uuid, buf);
-
-        cmdOut.textContent = `Valeur: hex=[${hx}] ascii="${asc}"` + (decoded ? ` dec=${JSON.stringify(decoded)}` : "");
-        log("INFO", "CMD_READ", { msg: "cmd read", service: svc.uuid, characteristic: ch.uuid, hex: hx, ascii: asc, decoded });
-      } catch (e) {
-        cmdOut.textContent = `Erreur: ${String(e)}`;
-        log("ERROR", "CMD_READ_ERR", { msg: String(e) });
-      }
-    }
-
-    async function cmdWrite() {
-      if (!server?.connected) return;
-      const u = cmdCharUuid.value.trim();
-      const mode = cmdWriteMode.value;
-      const writeType = cmdWriteType.value;
-      const data = cmdWriteData.value || "";
-
-      try {
-        const { svc, ch } = await getCharByUuid(u);
-
-        if (writeType === "write" && !ch.properties.write) throw new Error("write non supporté.");
-        if (writeType === "writeWithoutResponse" && !ch.properties.writeWithoutResponse) throw new Error("writeWithoutResponse non supporté.");
-
-        let buf;
-        if (mode === "hex") buf = bufFromHex(data);
-        else buf = bufFromAscii(data);
-
-        const dv = new DataView(buf);
-
-        if (writeType === "write") await ch.writeValue(dv);
-        else await ch.writeValueWithoutResponse(dv);
-
-        log("INFO", "CMD_WRITE", {
-          msg: "cmd write",
-          service: svc.uuid,
-          characteristic: ch.uuid,
-          writeType,
-          dataMode: mode,
-          hex: hexFromBuf(buf),
-          ascii: asciiFromBuf(buf)
-        });
-      } catch (e) {
-        log("ERROR", "CMD_WRITE_ERR", { msg: String(e) });
-        alert(`Écriture impossible: ${String(e)}`);
-      }
-    }
-
-    async function cmdNotifyOn() {
-      if (!server?.connected) return;
-      const u = cmdCharUuid.value.trim();
-
-      try {
-        const { svc, ch } = await getCharByUuid(u);
-        if (!(ch.properties.notify || ch.properties.indicate)) throw new Error("Notifications/indications non supportées.");
-
-        ch.addEventListener("characteristicvaluechanged", (ev) => {
-          const dv = ev.target.value;
-          const buf = dv.buffer.slice(dv.byteOffset, dv.byteOffset + dv.byteLength);
-          const hx = hexFromBuf(buf);
-          const asc = asciiFromBuf(buf);
-          const decoded = decodeValue(svc.uuid, ch.uuid, buf);
-
-          notifCount += 1;
-          notifCountEl.textContent = String(notifCount);
-
-          if (!firstNotifySet) {
-            firstNotifySet = true;
-            const ms = Math.round(performance.now() - connectT0);
-            session.profiling.firstNotifyMs = ms;
-            tFirstNotif.textContent = `${ms} ms`;
-          }
-
-          log("INFO", "NOTIFY", {
-            msg: "notification",
-            service: svc.uuid,
-            characteristic: ch.uuid,
-            hex: hx,
-            ascii: asc,
-            decoded,
-            size: buf.byteLength
-          });
-
-          cmdOut.textContent = `Notif: hex=[${clampStr(hx, 180)}] ascii="${clampStr(asc, 90)}"` + (decoded ? ` dec=${JSON.stringify(decoded)}` : "");
+        log("INFO", "NOTIFY", {
+          msg: "notification",
+          service: svcUuid,
+          characteristic: chUuid,
+          hex: hx,
+          ascii: asc,
+          decoded,
+          size
         });
 
-        await ch.startNotifications();
-        log("INFO", "CMD_NOTIFY_ON", { msg: "notifications enabled", service: svc.uuid, characteristic: ch.uuid });
-      } catch (e) {
-        log("ERROR", "CMD_NOTIFY_ON_ERR", { msg: String(e) });
-        alert(`Notif ON impossible: ${String(e)}`);
+        cmdOut.textContent = `Notif: hex=[${clampStr(hx, 180)}] ascii="${clampStr(asc, 90)}"` + (decoded ? ` dec=${JSON.stringify(decoded)}` : "");
       }
-    }
-
-    async function cmdNotifyOff() {
-      if (!server?.connected) return;
-      const u = cmdCharUuid.value.trim();
-
-      try {
-        const { svc, ch } = await getCharByUuid(u);
-        await ch.stopNotifications();
-        log("INFO", "CMD_NOTIFY_OFF", { msg: "notifications disabled", service: svc.uuid, characteristic: ch.uuid });
-      } catch (e) {
-        log("ERROR", "CMD_NOTIFY_OFF_ERR", { msg: String(e) });
-        alert(`Notif OFF impossible: ${String(e)}`);
-      }
-    }
+    });
 
     function exportJson() {
       const data = JSON.stringify(session, null, 2);
