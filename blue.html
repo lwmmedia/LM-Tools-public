@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BLE Analyzer – Web Bluetooth (iOS/Bluefy)</title>
+  <style>
+    body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif; margin: 16px; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+    button { padding: 10px 12px; border: 1px solid #ccc; border-radius: 10px; background: #fff; }
+    button:disabled { opacity: 0.5; }
+    .card { border: 1px solid #e5e5e5; border-radius: 12px; padding: 12px; margin: 12px 0; }
+    .muted { color: #666; font-size: 12px; }
+    #log { white-space: pre-wrap; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+    .kv { display: grid; grid-template-columns: 120px 1fr; gap: 6px 10px; font-size: 13px; }
+    code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+    select, input { padding: 8px; border-radius: 10px; border: 1px solid #ccc; }
+    .pill { display: inline-block; padding: 2px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 12px; margin-right: 6px; }
+    .svc { margin: 10px 0 0; }
+    .char { margin: 6px 0 0 10px; }
+    .btn-small { padding: 6px 10px; border-radius: 10px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>BLE Analyzer – Web Bluetooth</h1>
+  <div class="muted">
+    Requiert un navigateur supportant Web Bluetooth (ex: Bluefy sur iOS si activé). Connexion BLE uniquement.
+    Déployez idéalement en HTTPS (ou en local via fichier, selon les restrictions du navigateur).
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <button id="btnScan">Scanner / Sélectionner</button>
+      <button id="btnDisconnect" disabled>Déconnecter</button>
+      <button id="btnRefresh" disabled>Rafraîchir services</button>
+      <button id="btnClearLog">Effacer log</button>
+    </div>
+
+    <div class="kv">
+      <div class="muted">Périphérique</div><div id="devName">—</div>
+      <div class="muted">ID</div><div id="devId">—</div>
+      <div class="muted">État</div><div id="devState">Déconnecté</div>
+    </div>
+
+    <div class="row" style="margin-top:12px;">
+      <span class="pill">Lecture</span>
+      <span class="pill">Notifications</span>
+      <span class="pill">Inventaire GATT</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="align-items:center;">
+      <div class="muted">Mode scan</div>
+      <select id="scanMode">
+        <option value="acceptAll">Tous périphériques (picker)</option>
+        <option value="battery">Filtrer: Battery Service (0x180F)</option>
+        <option value="deviceInfo">Filtrer: Device Info (0x180A)</option>
+      </select>
+
+      <div class="muted">Service additionnel (UUID)</div>
+      <input id="extraService" placeholder="ex: 0000180f-0000-1000-8000-00805f9b34fb" style="min-width:260px;" />
+    </div>
+    <div class="muted" style="margin-top:8px;">
+      Note: iOS impose généralement un picker; la “vraie” découverte passive (scan continu) n’est pas exposée en Web Bluetooth.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:15px;margin:0 0 8px;">Services & Caractéristiques</h2>
+    <div id="gattTree" class="muted">Aucune donnée (connectez un périphérique).</div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:15px;margin:0 0 8px;">Log</h2>
+    <div id="log"></div>
+  </div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  const btnScan = $("btnScan");
+  const btnDisconnect = $("btnDisconnect");
+  const btnRefresh = $("btnRefresh");
+  const btnClearLog = $("btnClearLog");
+  const scanMode = $("scanMode");
+  const extraService = $("extraService");
+
+  const devName = $("devName");
+  const devId = $("devId");
+  const devState = $("devState");
+  const logEl = $("log");
+  const gattTree = $("gattTree");
+
+  let device = null;
+  let server = null;
+
+  function log(...args) {
+    const line = args.map(a => (typeof a === "string" ? a : JSON.stringify(a))).join(" ");
+    logEl.textContent += line + "\n";
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function setState(state) {
+    devState.textContent = state;
+  }
+
+  function supportsWebBluetooth() {
+    return !!navigator.bluetooth;
+  }
+
+  function hex(buffer) {
+    const u = new Uint8Array(buffer);
+    return [...u].map(b => b.toString(16).padStart(2, "0")).join(" ");
+  }
+
+  function ascii(buffer) {
+    const u = new Uint8Array(buffer);
+    let s = "";
+    for (const b of u) s += (b >= 32 && b <= 126) ? String.fromCharCode(b) : ".";
+    return s;
+  }
+
+  function uuidShort(uuid) {
+    // Affiche les UUID 16-bit quand possible (ex: 0000180f-0000-1000-8000-00805f9b34fb -> 0x180F)
+    const m = /^0000([0-9a-fA-F]{4})-0000-1000-8000-00805f9b34fb$/.exec(uuid);
+    return m ? `0x${m[1].toUpperCase()}` : uuid;
+  }
+
+  function propsToText(p) {
+    const out = [];
+    if (p.read) out.push("read");
+    if (p.write) out.push("write");
+    if (p.writeWithoutResponse) out.push("writeNoRsp");
+    if (p.notify) out.push("notify");
+    if (p.indicate) out.push("indicate");
+    if (p.authenticatedSignedWrites) out.push("signedWrite");
+    if (p.reliableWrite) out.push("reliableWrite");
+    if (p.writableAuxiliaries) out.push("aux");
+    return out.join(", ");
+  }
+
+  async function safeReadValue(characteristic) {
+    try {
+      const v = await characteristic.readValue();
+      // v is a DataView
+      return v.buffer.slice(v.byteOffset, v.byteOffset + v.byteLength);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function renderGatt() {
+    if (!server?.connected) {
+      gattTree.textContent = "Aucune donnée (connectez un périphérique).";
+      return;
+    }
+
+    gattTree.innerHTML = "";
+    const services = await server.getPrimaryServices();
+
+    for (const svc of services) {
+      const svcDiv = document.createElement("div");
+      svcDiv.className = "svc";
+      svcDiv.innerHTML = `<div><b>Service</b> <code>${uuidShort(svc.uuid)}</code> <span class="muted">(${svc.uuid})</span></div>`;
+      gattTree.appendChild(svcDiv);
+
+      let characteristics = [];
+      try {
+        characteristics = await svc.getCharacteristics();
+      } catch (e) {
+        const warn = document.createElement("div");
+        warn.className = "muted";
+        warn.textContent = "Impossible de lister les caractéristiques (droits/plateforme).";
+        svcDiv.appendChild(warn);
+        continue;
+      }
+
+      for (const ch of characteristics) {
+        const chDiv = document.createElement("div");
+        chDiv.className = "char";
+
+        const props = propsToText(ch.properties);
+        chDiv.innerHTML = `
+          <div>
+            <b>Char</b> <code>${uuidShort(ch.uuid)}</code>
+            <span class="muted">(${ch.uuid})</span>
+            <span class="pill">${props || "—"}</span>
+          </div>
+          <div class="row">
+            <button class="btn-small" data-act="read">Lire</button>
+            <button class="btn-small" data-act="notify">Notif ON</button>
+            <button class="btn-small" data-act="stopnotify">Notif OFF</button>
+          </div>
+          <div class="muted" data-out>Valeur: —</div>
+        `;
+        svcDiv.appendChild(chDiv);
+
+        const outEl = chDiv.querySelector("[data-out]");
+
+        // Handlers
+        chDiv.querySelectorAll("button").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const act = btn.getAttribute("data-act");
+            if (act === "read") {
+              if (!ch.properties.read) { outEl.textContent = "Valeur: lecture non supportée."; return; }
+              const buf = await safeReadValue(ch);
+              if (!buf) { outEl.textContent = "Valeur: lecture impossible (droits/erreur)."; return; }
+              outEl.textContent = `Valeur: hex=[${hex(buf)}] ascii="${ascii(buf)}"`;
+              log(`[READ] ${ch.uuid} => ${hex(buf)}`);
+            }
+
+            if (act === "notify") {
+              if (!(ch.properties.notify || ch.properties.indicate)) {
+                outEl.textContent = "Valeur: notifications non supportées.";
+                return;
+              }
+              try {
+                ch.addEventListener("characteristicvaluechanged", (ev) => {
+                  const dv = ev.target.value;
+                  const buf = dv.buffer.slice(dv.byteOffset, dv.byteOffset + dv.byteLength);
+                  outEl.textContent = `Valeur (notif): hex=[${hex(buf)}] ascii="${ascii(buf)}"`;
+                  log(`[NOTIFY] ${ch.uuid} => ${hex(buf)}`);
+                });
+                await ch.startNotifications();
+                log(`[NOTIFY ON] ${ch.uuid}`);
+              } catch (e) {
+                log(`[ERR] startNotifications ${ch.uuid}:`, String(e));
+                outEl.textContent = "Valeur: activation notifications impossible.";
+              }
+            }
+
+            if (act === "stopnotify") {
+              try {
+                await ch.stopNotifications();
+                log(`[NOTIFY OFF] ${ch.uuid}`);
+              } catch (e) {
+                log(`[ERR] stopNotifications ${ch.uuid}:`, String(e));
+              }
+            }
+          });
+        });
+
+        // “Analyse” initiale : tente une lecture si lecture possible (souvent utile pour Battery Level)
+        if (ch.properties.read) {
+          const buf = await safeReadValue(ch);
+          if (buf) {
+            outEl.textContent = `Valeur: hex=[${hex(buf)}] ascii="${ascii(buf)}"`;
+          }
+        }
+      }
+    }
+  }
+
+  function onDisconnected() {
+    log("[INFO] Déconnecté.");
+    setState("Déconnecté");
+    btnDisconnect.disabled = true;
+    btnRefresh.disabled = true;
+  }
+
+  async function connectFlow() {
+    if (!supportsWebBluetooth()) {
+      alert("Web Bluetooth indisponible dans ce navigateur.");
+      return;
+    }
+
+    const filters = [];
+    const optionalServices = [];
+
+    // Services “utiles” pour analyse
+    optionalServices.push("device_information"); // 0x180A (si supporté)
+    optionalServices.push("battery_service");    // 0x180F (si supporté)
+
+    const extra = extraService.value.trim();
+    if (extra) optionalServices.push(extra);
+
+    if (scanMode.value === "battery") {
+      filters.push({ services: ["battery_service"] });
+    } else if (scanMode.value === "deviceInfo") {
+      filters.push({ services: ["device_information"] });
+    }
+
+    const options = (scanMode.value === "acceptAll")
+      ? { acceptAllDevices: true, optionalServices }
+      : { filters, optionalServices };
+
+    log("[INFO] Demande de périphérique…");
+    device = await navigator.bluetooth.requestDevice(options);
+
+    devName.textContent = device.name || "(sans nom)";
+    devId.textContent = device.id || "—";
+    device.addEventListener("gattserverdisconnected", onDisconnected);
+
+    log(`[INFO] Sélection: ${device.name || "(sans nom)"} id=${device.id || "—"}`);
+    setState("Connexion…");
+
+    server = await device.gatt.connect();
+    setState("Connecté");
+    btnDisconnect.disabled = false;
+    btnRefresh.disabled = false;
+
+    log("[INFO] GATT connecté. Inventaire services…");
+    await renderGatt();
+
+    // Exemple d’analyse “standard”: Battery Level si présent
+    try {
+      const battSvc = await server.getPrimaryService("battery_service");
+      const battChar = await battSvc.getCharacteristic("battery_level");
+      const dv = await battChar.readValue();
+      const level = dv.getUint8(0);
+      log(`[ANALYSE] Batterie: ${level}%`);
+    } catch (_) {
+      // Non bloquant
+    }
+  }
+
+  btnScan.addEventListener("click", async () => {
+    try {
+      await connectFlow();
+    } catch (e) {
+      log("[ERR]", String(e));
+      setState("Déconnecté");
+    }
+  });
+
+  btnDisconnect.addEventListener("click", async () => {
+    try {
+      if (device?.gatt?.connected) device.gatt.disconnect();
+    } catch (e) {
+      log("[ERR]", String(e));
+    }
+    onDisconnected();
+  });
+
+  btnRefresh.addEventListener("click", async () => {
+    try {
+      await renderGatt();
+      log("[INFO] Services rafraîchis.");
+    } catch (e) {
+      log("[ERR]", String(e));
+    }
+  });
+
+  btnClearLog.addEventListener("click", () => {
+    logEl.textContent = "";
+  });
+
+  // Diagnostic initial
+  if (!supportsWebBluetooth()) {
+    log("[WARN] navigator.bluetooth absent. Essayez Bluefy / un navigateur compatible Web Bluetooth.");
+  } else {
+    log("[OK] Web Bluetooth détecté. Cliquez sur « Scanner / Sélectionner ».");
+  }
+})();
+</script>
+</body>
+</html>
