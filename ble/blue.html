@@ -3,358 +3,621 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>BLE Analyzer – Web Bluetooth (iOS/Bluefy)</title>
+  <title>BLE Internal Analyzer (Bluefy/iOS)</title>
+  <meta name="robots" content="noindex,nofollow" />
   <style>
     body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif; margin: 16px; }
-    h1 { font-size: 18px; margin: 0 0 8px; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
-    button { padding: 10px 12px; border: 1px solid #ccc; border-radius: 10px; background: #fff; }
-    button:disabled { opacity: 0.5; }
-    .card { border: 1px solid #e5e5e5; border-radius: 12px; padding: 12px; margin: 12px 0; }
+    h1 { font-size: 18px; margin: 0 0 6px; }
+    h2 { font-size: 14px; margin: 0 0 8px; }
     .muted { color: #666; font-size: 12px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin: 10px 0; }
+    .card { border:1px solid #e6e6e6; border-radius: 12px; padding: 12px; margin: 12px 0; }
+    button { padding: 10px 12px; border: 1px solid #ccc; border-radius: 10px; background: #fff; }
+    button:disabled { opacity: .5; }
+    select, input { padding: 8px; border-radius: 10px; border:1px solid #ccc; }
+    .kv { display:grid; grid-template-columns: 140px 1fr; gap: 6px 10px; font-size: 13px; }
     #log { white-space: pre-wrap; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
-    .kv { display: grid; grid-template-columns: 120px 1fr; gap: 6px 10px; font-size: 13px; }
+    #tree { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.35; }
     code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
-    select, input { padding: 8px; border-radius: 10px; border: 1px solid #ccc; }
-    .pill { display: inline-block; padding: 2px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 12px; margin-right: 6px; }
-    .svc { margin: 10px 0 0; }
-    .char { margin: 6px 0 0 10px; }
-    .btn-small { padding: 6px 10px; border-radius: 10px; font-size: 12px; }
+    .pill { display:inline-block; padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; margin-right: 6px; }
+    .hr { height:1px; background:#eee; margin: 10px 0; }
+    .btn-s { padding: 6px 10px; font-size: 12px; border-radius: 10px; }
+    textarea { width:100%; min-height: 70px; border:1px solid #ccc; border-radius: 10px; padding: 10px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 800px) { .grid2 { grid-template-columns: 1fr; } .kv{grid-template-columns:120px 1fr;} }
   </style>
 </head>
 <body>
-  <h1>BLE Analyzer – Web Bluetooth</h1>
+  <h1>BLE Internal Analyzer</h1>
   <div class="muted">
-    Requiert un navigateur supportant Web Bluetooth (ex: Bluefy sur iOS si activé). Connexion BLE uniquement.
-    Déployez idéalement en HTTPS (ou en local via fichier, selon les restrictions du navigateur).
+    Outil interne : inventaire GATT, lecture/écriture, notifications, profilage, export JSON/CSV.
+    (Web Bluetooth requis : Bluefy iOS avec Web Bluetooth actif + page en HTTPS)
   </div>
 
   <div class="card">
     <div class="row">
-      <button id="btnScan">Scanner / Sélectionner</button>
+      <button id="btnPick">Sélectionner périphérique</button>
       <button id="btnDisconnect" disabled>Déconnecter</button>
-      <button id="btnRefresh" disabled>Rafraîchir services</button>
+      <button id="btnRefresh" disabled>Rafraîchir GATT</button>
       <button id="btnClearLog">Effacer log</button>
+      <button id="btnExportJson" disabled>Export JSON</button>
+      <button id="btnExportCsv" disabled>Export CSV</button>
+    </div>
+
+    <div class="row">
+      <span class="pill">Profilage</span>
+      <span class="pill">Notifications</span>
+      <span class="pill">Dump hex</span>
+      <span class="pill">Décodage modulaire</span>
     </div>
 
     <div class="kv">
       <div class="muted">Périphérique</div><div id="devName">—</div>
       <div class="muted">ID</div><div id="devId">—</div>
       <div class="muted">État</div><div id="devState">Déconnecté</div>
+      <div class="muted">Connect t0</div><div id="tConnect">—</div>
+      <div class="muted">GATT inventory</div><div id="tInventory">—</div>
+      <div class="muted">1ère notif</div><div id="tFirstNotif">—</div>
+      <div class="muted">Notif count</div><div id="notifCount">0</div>
     </div>
 
-    <div class="row" style="margin-top:12px;">
-      <span class="pill">Lecture</span>
-      <span class="pill">Notifications</span>
-      <span class="pill">Inventaire GATT</span>
-    </div>
-  </div>
+    <div class="hr"></div>
 
-  <div class="card">
-    <div class="row" style="align-items:center;">
-      <div class="muted">Mode scan</div>
-      <select id="scanMode">
-        <option value="acceptAll">Tous périphériques (picker)</option>
-        <option value="battery">Filtrer: Battery Service (0x180F)</option>
-        <option value="deviceInfo">Filtrer: Device Info (0x180A)</option>
+    <div class="row">
+      <div class="muted">Mode sélection</div>
+      <select id="mode">
+        <option value="acceptAll">acceptAllDevices (picker)</option>
+        <option value="battery">Filtre : Battery Service (0x180F)</option>
+        <option value="deviceInfo">Filtre : Device Info (0x180A)</option>
+        <option value="custom">Filtre : Service UUID custom</option>
       </select>
 
-      <div class="muted">Service additionnel (UUID)</div>
-      <input id="extraService" placeholder="ex: 0000180f-0000-1000-8000-00805f9b34fb" style="min-width:260px;" />
-    </div>
-    <div class="muted" style="margin-top:8px;">
-      Note: iOS impose généralement un picker; la “vraie” découverte passive (scan continu) n’est pas exposée en Web Bluetooth.
+      <div class="muted">Service UUID custom</div>
+      <input id="customSvc" placeholder="ex: 6e400001-b5a3-f393-e0a9-e50e24dcca9e" style="min-width:320px;" />
+
+      <div class="muted">Optional services (CSV UUID)</div>
+      <input id="optSvcs" placeholder="battery_service,device_information,..." style="min-width:320px;" />
     </div>
   </div>
 
   <div class="card">
-    <h2 style="font-size:15px;margin:0 0 8px;">Services & Caractéristiques</h2>
-    <div id="gattTree" class="muted">Aucune donnée (connectez un périphérique).</div>
+    <h2>Commandes (lecture / écriture ciblée)</h2>
+    <div class="muted">
+      Renseignez une caractéristique (UUID) pour agir directement (utile quand l’inventaire est long).
+      L’écriture supporte HEX (<code>01 0a ff</code>) ou ASCII (<code>HELLO</code>).
+    </div>
+    <div class="grid2" style="margin-top:10px;">
+      <div>
+        <div class="muted">Characteristic UUID</div>
+        <input id="cmdCharUuid" placeholder="ex: 00002a19-0000-1000-8000-00805f9b34fb" style="width:100%;" />
+        <div class="row">
+          <button class="btn-s" id="btnCmdRead" disabled>Lire</button>
+          <button class="btn-s" id="btnCmdNotifyOn" disabled>Notif ON</button>
+          <button class="btn-s" id="btnCmdNotifyOff" disabled>Notif OFF</button>
+        </div>
+        <div class="muted" id="cmdOut">Valeur: —</div>
+      </div>
+      <div>
+        <div class="muted">Écriture (HEX ou ASCII)</div>
+        <textarea id="cmdWriteData" placeholder="HEX: 01 02 0a ff   |   ASCII: HELLO"></textarea>
+        <div class="row">
+          <select id="cmdWriteMode">
+            <option value="hex">HEX</option>
+            <option value="ascii">ASCII</option>
+          </select>
+          <button class="btn-s" id="btnCmdWrite" disabled>Écrire</button>
+          <select id="cmdWriteType">
+            <option value="write">write</option>
+            <option value="writeWithoutResponse">writeWithoutResponse</option>
+          </select>
+        </div>
+        <div class="muted">Conseil : sur certains firmwares, l’écriture sans réponse est requise.</div>
+      </div>
+    </div>
   </div>
 
   <div class="card">
-    <h2 style="font-size:15px;margin:0 0 8px;">Log</h2>
+    <h2>Inventaire GATT (tech)</h2>
+    <div id="tree" class="muted">Non connecté.</div>
+  </div>
+
+  <div class="card">
+    <h2>Log</h2>
     <div id="log"></div>
   </div>
 
-<script>
-(() => {
-  const $ = (id) => document.getElementById(id);
+  <script type="module">
+    import {
+      nowIso, msDelta, hexFromBuf, asciiFromBuf, bufFromHex, bufFromAscii,
+      shortUuid, propsToText, downloadText, safeReadValue, clampStr,
+      csvEscape
+    } from './utils.js';
 
-  const btnScan = $("btnScan");
-  const btnDisconnect = $("btnDisconnect");
-  const btnRefresh = $("btnRefresh");
-  const btnClearLog = $("btnClearLog");
-  const scanMode = $("scanMode");
-  const extraService = $("extraService");
+    import { decodeValue } from './parsers.js';
 
-  const devName = $("devName");
-  const devId = $("devId");
-  const devState = $("devState");
-  const logEl = $("log");
-  const gattTree = $("gattTree");
+    const $ = (id) => document.getElementById(id);
 
-  let device = null;
-  let server = null;
+    const btnPick = $("btnPick");
+    const btnDisconnect = $("btnDisconnect");
+    const btnRefresh = $("btnRefresh");
+    const btnClearLog = $("btnClearLog");
+    const btnExportJson = $("btnExportJson");
+    const btnExportCsv = $("btnExportCsv");
 
-  function log(...args) {
-    const line = args.map(a => (typeof a === "string" ? a : JSON.stringify(a))).join(" ");
-    logEl.textContent += line + "\n";
-    logEl.scrollTop = logEl.scrollHeight;
-  }
+    const devName = $("devName");
+    const devId = $("devId");
+    const devState = $("devState");
 
-  function setState(state) {
-    devState.textContent = state;
-  }
+    const tConnect = $("tConnect");
+    const tInventory = $("tInventory");
+    const tFirstNotif = $("tFirstNotif");
+    const notifCountEl = $("notifCount");
 
-  function supportsWebBluetooth() {
-    return !!navigator.bluetooth;
-  }
+    const mode = $("mode");
+    const customSvc = $("customSvc");
+    const optSvcs = $("optSvcs");
 
-  function hex(buffer) {
-    const u = new Uint8Array(buffer);
-    return [...u].map(b => b.toString(16).padStart(2, "0")).join(" ");
-  }
+    const tree = $("tree");
+    const logEl = $("log");
 
-  function ascii(buffer) {
-    const u = new Uint8Array(buffer);
-    let s = "";
-    for (const b of u) s += (b >= 32 && b <= 126) ? String.fromCharCode(b) : ".";
-    return s;
-  }
+    const cmdCharUuid = $("cmdCharUuid");
+    const btnCmdRead = $("btnCmdRead");
+    const btnCmdNotifyOn = $("btnCmdNotifyOn");
+    const btnCmdNotifyOff = $("btnCmdNotifyOff");
+    const btnCmdWrite = $("btnCmdWrite");
+    const cmdWriteData = $("cmdWriteData");
+    const cmdWriteMode = $("cmdWriteMode");
+    const cmdWriteType = $("cmdWriteType");
+    const cmdOut = $("cmdOut");
 
-  function uuidShort(uuid) {
-    // Affiche les UUID 16-bit quand possible (ex: 0000180f-0000-1000-8000-00805f9b34fb -> 0x180F)
-    const m = /^0000([0-9a-fA-F]{4})-0000-1000-8000-00805f9b34fb$/.exec(uuid);
-    return m ? `0x${m[1].toUpperCase()}` : uuid;
-  }
+    let device = null;
+    let server = null;
 
-  function propsToText(p) {
-    const out = [];
-    if (p.read) out.push("read");
-    if (p.write) out.push("write");
-    if (p.writeWithoutResponse) out.push("writeNoRsp");
-    if (p.notify) out.push("notify");
-    if (p.indicate) out.push("indicate");
-    if (p.authenticatedSignedWrites) out.push("signedWrite");
-    if (p.reliableWrite) out.push("reliableWrite");
-    if (p.writableAuxiliaries) out.push("aux");
-    return out.join(", ");
-  }
+    // In-memory session
+    const session = {
+      meta: {
+        startedAt: nowIso(),
+        userAgent: navigator.userAgent,
+        url: location.href,
+        note: "BLE Internal Analyzer"
+      },
+      device: {},
+      profiling: {
+        connectStartIso: null,
+        connectMs: null,
+        inventoryMs: null,
+        firstNotifyMs: null
+      },
+      inventory: {
+        services: [] // populated after refresh
+      },
+      events: [] // {ts, lvl, type, ...}
+    };
 
-  async function safeReadValue(characteristic) {
-    try {
-      const v = await characteristic.readValue();
-      // v is a DataView
-      return v.buffer.slice(v.byteOffset, v.byteOffset + v.byteLength);
-    } catch (e) {
-      return null;
+    let connectT0 = 0;
+    let inventoryT0 = 0;
+    let firstNotifySet = false;
+    let notifCount = 0;
+
+    function uiSetState(s) { devState.textContent = s; }
+
+    function log(lvl, type, obj = {}) {
+      const evt = { ts: nowIso(), lvl, type, ...obj };
+      session.events.push(evt);
+
+      const line = `[${evt.ts}] ${lvl} ${type} ${obj.msg ? "- " + obj.msg : ""}`.trim();
+      logEl.textContent += line + "\n";
+      logEl.scrollTop = logEl.scrollHeight;
     }
-  }
 
-  async function renderGatt() {
-    if (!server?.connected) {
-      gattTree.textContent = "Aucune donnée (connectez un périphérique).";
-      return;
+    function enableConnectedUi(connected) {
+      btnDisconnect.disabled = !connected;
+      btnRefresh.disabled = !connected;
+      btnExportJson.disabled = !connected;
+      btnExportCsv.disabled = !connected;
+
+      btnCmdRead.disabled = !connected;
+      btnCmdNotifyOn.disabled = !connected;
+      btnCmdNotifyOff.disabled = !connected;
+      btnCmdWrite.disabled = !connected;
     }
 
-    gattTree.innerHTML = "";
-    const services = await server.getPrimaryServices();
+    function onDisconnected() {
+      uiSetState("Déconnecté");
+      enableConnectedUi(false);
+      tree.textContent = "Non connecté.";
+      log("INFO", "DISCONNECT", { msg: "GATT disconnected" });
+    }
 
-    for (const svc of services) {
-      const svcDiv = document.createElement("div");
-      svcDiv.className = "svc";
-      svcDiv.innerHTML = `<div><b>Service</b> <code>${uuidShort(svc.uuid)}</code> <span class="muted">(${svc.uuid})</span></div>`;
-      gattTree.appendChild(svcDiv);
+    function ensureWebBluetooth() {
+      if (!navigator.bluetooth) {
+        log("ERROR", "NO_WEB_BLUETOOTH", { msg: "navigator.bluetooth absent (Bluefy/Web Bluetooth non disponible)" });
+        alert("Web Bluetooth indisponible dans ce navigateur.");
+        return false;
+      }
+      return true;
+    }
 
-      let characteristics = [];
-      try {
-        characteristics = await svc.getCharacteristics();
-      } catch (e) {
-        const warn = document.createElement("div");
-        warn.className = "muted";
-        warn.textContent = "Impossible de lister les caractéristiques (droits/plateforme).";
-        svcDiv.appendChild(warn);
-        continue;
+    function buildRequestOptions() {
+      const optionalServices = [];
+      const rawOpt = (optSvcs.value || "").trim();
+      if (rawOpt) {
+        rawOpt.split(",").map(s => s.trim()).filter(Boolean).forEach(s => optionalServices.push(s));
+      } else {
+        // defaults
+        optionalServices.push("device_information");
+        optionalServices.push("battery_service");
       }
 
-      for (const ch of characteristics) {
-        const chDiv = document.createElement("div");
-        chDiv.className = "char";
+      const m = mode.value;
+      if (m === "acceptAll") return { acceptAllDevices: true, optionalServices };
 
-        const props = propsToText(ch.properties);
-        chDiv.innerHTML = `
-          <div>
-            <b>Char</b> <code>${uuidShort(ch.uuid)}</code>
-            <span class="muted">(${ch.uuid})</span>
-            <span class="pill">${props || "—"}</span>
-          </div>
-          <div class="row">
-            <button class="btn-small" data-act="read">Lire</button>
-            <button class="btn-small" data-act="notify">Notif ON</button>
-            <button class="btn-small" data-act="stopnotify">Notif OFF</button>
-          </div>
-          <div class="muted" data-out>Valeur: —</div>
-        `;
-        svcDiv.appendChild(chDiv);
+      if (m === "battery") return { filters: [{ services: ["battery_service"] }], optionalServices };
+      if (m === "deviceInfo") return { filters: [{ services: ["device_information"] }], optionalServices };
 
-        const outEl = chDiv.querySelector("[data-out]");
+      // custom
+      const u = (customSvc.value || "").trim();
+      if (!u) {
+        // fallback : acceptAll
+        return { acceptAllDevices: true, optionalServices };
+      }
+      return { filters: [{ services: [u] }], optionalServices };
+    }
 
-        // Handlers
-        chDiv.querySelectorAll("button").forEach(btn => {
-          btn.addEventListener("click", async () => {
-            const act = btn.getAttribute("data-act");
-            if (act === "read") {
-              if (!ch.properties.read) { outEl.textContent = "Valeur: lecture non supportée."; return; }
-              const buf = await safeReadValue(ch);
-              if (!buf) { outEl.textContent = "Valeur: lecture impossible (droits/erreur)."; return; }
-              outEl.textContent = `Valeur: hex=[${hex(buf)}] ascii="${ascii(buf)}"`;
-              log(`[READ] ${ch.uuid} => ${hex(buf)}`);
+    async function pickAndConnect() {
+      if (!ensureWebBluetooth()) return;
+
+      session.meta.startedAt = nowIso();
+      session.events = [];
+      session.inventory.services = [];
+      session.device = {};
+      session.profiling = { connectStartIso: null, connectMs: null, inventoryMs: null, firstNotifyMs: null };
+
+      firstNotifySet = false;
+      notifCount = 0;
+      notifCountEl.textContent = "0";
+      tFirstNotif.textContent = "—";
+      tInventory.textContent = "—";
+
+      const options = buildRequestOptions();
+      log("INFO", "REQUEST_DEVICE", { msg: "requestDevice", options });
+
+      device = await navigator.bluetooth.requestDevice(options);
+
+      session.device = {
+        name: device.name || "",
+        id: device.id || "",
+      };
+
+      devName.textContent = device.name || "(sans nom)";
+      devId.textContent = device.id || "—";
+
+      device.addEventListener("gattserverdisconnected", onDisconnected);
+
+      uiSetState("Connexion…");
+      connectT0 = performance.now();
+      session.profiling.connectStartIso = nowIso();
+
+      server = await device.gatt.connect();
+      const connectMs = Math.round(performance.now() - connectT0);
+
+      session.profiling.connectMs = connectMs;
+      tConnect.textContent = `${connectMs} ms`;
+      uiSetState("Connecté");
+      enableConnectedUi(true);
+
+      log("INFO", "CONNECT", { msg: "GATT connected", connectMs });
+
+      await refreshGattInventory();
+    }
+
+    async function refreshGattInventory() {
+      if (!server?.connected) return;
+
+      inventoryT0 = performance.now();
+      log("INFO", "INVENTORY_START", { msg: "Listing primary services" });
+
+      const services = await server.getPrimaryServices();
+      const inv = [];
+
+      // Text tree
+      const lines = [];
+      lines.push(`Device: ${device?.name || "(sans nom)"}  id=${device?.id || "—"}`);
+      lines.push(`Services: ${services.length}`);
+      lines.push("");
+
+      for (const svc of services) {
+        const svcEntry = { uuid: svc.uuid, characteristics: [] };
+        lines.push(`SVC ${shortUuid(svc.uuid)}  ${svc.uuid}`);
+
+        let chars = [];
+        try {
+          chars = await svc.getCharacteristics();
+        } catch (e) {
+          lines.push(`  ! getCharacteristics failed: ${String(e)}`);
+          svcEntry.error = String(e);
+          inv.push(svcEntry);
+          continue;
+        }
+
+        lines.push(`  chars=${chars.length}`);
+        for (const ch of chars) {
+          const chEntry = {
+            uuid: ch.uuid,
+            properties: { ...ch.properties },
+            descriptors: []
+          };
+
+          const propsTxt = propsToText(ch.properties);
+          lines.push(`  CH  ${shortUuid(ch.uuid)}  props=[${propsTxt}]`);
+          lines.push(`      ${ch.uuid}`);
+
+          // Try descriptors (often restricted)
+          try {
+            const descs = await ch.getDescriptors();
+            lines.push(`      desc=${descs.length}`);
+            for (const d of descs) {
+              const dEntry = { uuid: d.uuid };
+              lines.push(`      DS  ${shortUuid(d.uuid)}  ${d.uuid}`);
+              chEntry.descriptors.push(dEntry);
             }
+          } catch (e) {
+            lines.push(`      desc=? (restricted)`);
+          }
 
-            if (act === "notify") {
-              if (!(ch.properties.notify || ch.properties.indicate)) {
-                outEl.textContent = "Valeur: notifications non supportées.";
-                return;
-              }
-              try {
-                ch.addEventListener("characteristicvaluechanged", (ev) => {
-                  const dv = ev.target.value;
-                  const buf = dv.buffer.slice(dv.byteOffset, dv.byteOffset + dv.byteLength);
-                  outEl.textContent = `Valeur (notif): hex=[${hex(buf)}] ascii="${ascii(buf)}"`;
-                  log(`[NOTIFY] ${ch.uuid} => ${hex(buf)}`);
-                });
-                await ch.startNotifications();
-                log(`[NOTIFY ON] ${ch.uuid}`);
-              } catch (e) {
-                log(`[ERR] startNotifications ${ch.uuid}:`, String(e));
-                outEl.textContent = "Valeur: activation notifications impossible.";
-              }
-            }
+          // Best-effort read
+          let readBuf = null;
+          if (ch.properties.read) {
+            readBuf = await safeReadValue(ch);
+            if (readBuf) {
+              const hx = hexFromBuf(readBuf);
+              const asc = asciiFromBuf(readBuf);
+              const decoded = decodeValue(svc.uuid, ch.uuid, readBuf);
+              chEntry.sample = { hex: hx, ascii: asc, decoded };
 
-            if (act === "stopnotify") {
-              try {
-                await ch.stopNotifications();
-                log(`[NOTIFY OFF] ${ch.uuid}`);
-              } catch (e) {
-                log(`[ERR] stopNotifications ${ch.uuid}:`, String(e));
-              }
+              lines.push(`      read: hex=[${clampStr(hx, 120)}] ascii="${clampStr(asc, 80)}"`);
+              if (decoded) lines.push(`      dec : ${JSON.stringify(decoded)}`);
+              log("INFO", "READ_SAMPLE", {
+                msg: `sample read ${ch.uuid}`,
+                service: svc.uuid,
+                characteristic: ch.uuid,
+                hex: hx,
+                ascii: asc,
+                decoded
+              });
+            } else {
+              lines.push(`      read: (failed)`);
             }
+          }
+
+          svcEntry.characteristics.push(chEntry);
+        }
+
+        lines.push("");
+        inv.push(svcEntry);
+      }
+
+      session.inventory.services = inv;
+
+      const inventoryMs = Math.round(performance.now() - inventoryT0);
+      session.profiling.inventoryMs = inventoryMs;
+      tInventory.textContent = `${inventoryMs} ms`;
+
+      tree.textContent = lines.join("\n");
+      log("INFO", "INVENTORY_DONE", { msg: "Inventory complete", services: inv.length, inventoryMs });
+    }
+
+    async function disconnect() {
+      try {
+        if (device?.gatt?.connected) device.gatt.disconnect();
+      } catch (e) {
+        log("ERROR", "DISCONNECT_ERR", { msg: String(e) });
+      }
+      onDisconnected();
+    }
+
+    function getCharByUuid(uuid) {
+      // Fetch on-demand: iterate services and try getCharacteristic where possible
+      // This avoids caching actual characteristic objects in session (serializable).
+      return (async () => {
+        const u = (uuid || "").trim().toLowerCase();
+        if (!u) throw new Error("Characteristic UUID vide.");
+
+        const services = await server.getPrimaryServices();
+        for (const svc of services) {
+          try {
+            const ch = await svc.getCharacteristic(u);
+            if (ch) return { svc, ch };
+          } catch (_) { /* continue */ }
+        }
+        throw new Error("Characteristic introuvable via getCharacteristic (UUID ou droits).");
+      })();
+    }
+
+    async function cmdRead() {
+      if (!server?.connected) return;
+      const u = cmdCharUuid.value.trim();
+      try {
+        const { svc, ch } = await getCharByUuid(u);
+        if (!ch.properties.read) throw new Error("Lecture non supportée par cette caractéristique.");
+        const buf = await safeReadValue(ch);
+        if (!buf) throw new Error("Lecture impossible (droits/erreur).");
+
+        const hx = hexFromBuf(buf);
+        const asc = asciiFromBuf(buf);
+        const decoded = decodeValue(svc.uuid, ch.uuid, buf);
+
+        cmdOut.textContent = `Valeur: hex=[${hx}] ascii="${asc}"` + (decoded ? ` dec=${JSON.stringify(decoded)}` : "");
+        log("INFO", "CMD_READ", { msg: "cmd read", service: svc.uuid, characteristic: ch.uuid, hex: hx, ascii: asc, decoded });
+      } catch (e) {
+        cmdOut.textContent = `Erreur: ${String(e)}`;
+        log("ERROR", "CMD_READ_ERR", { msg: String(e) });
+      }
+    }
+
+    async function cmdWrite() {
+      if (!server?.connected) return;
+      const u = cmdCharUuid.value.trim();
+      const mode = cmdWriteMode.value;
+      const writeType = cmdWriteType.value;
+      const data = cmdWriteData.value || "";
+
+      try {
+        const { svc, ch } = await getCharByUuid(u);
+
+        if (writeType === "write" && !ch.properties.write) throw new Error("write non supporté.");
+        if (writeType === "writeWithoutResponse" && !ch.properties.writeWithoutResponse) throw new Error("writeWithoutResponse non supporté.");
+
+        let buf;
+        if (mode === "hex") buf = bufFromHex(data);
+        else buf = bufFromAscii(data);
+
+        const dv = new DataView(buf);
+
+        if (writeType === "write") await ch.writeValue(dv);
+        else await ch.writeValueWithoutResponse(dv);
+
+        log("INFO", "CMD_WRITE", {
+          msg: "cmd write",
+          service: svc.uuid,
+          characteristic: ch.uuid,
+          writeType,
+          dataMode: mode,
+          hex: hexFromBuf(buf),
+          ascii: asciiFromBuf(buf)
+        });
+      } catch (e) {
+        log("ERROR", "CMD_WRITE_ERR", { msg: String(e) });
+        alert(`Écriture impossible: ${String(e)}`);
+      }
+    }
+
+    async function cmdNotifyOn() {
+      if (!server?.connected) return;
+      const u = cmdCharUuid.value.trim();
+
+      try {
+        const { svc, ch } = await getCharByUuid(u);
+        if (!(ch.properties.notify || ch.properties.indicate)) throw new Error("Notifications/indications non supportées.");
+
+        ch.addEventListener("characteristicvaluechanged", (ev) => {
+          const dv = ev.target.value;
+          const buf = dv.buffer.slice(dv.byteOffset, dv.byteOffset + dv.byteLength);
+          const hx = hexFromBuf(buf);
+          const asc = asciiFromBuf(buf);
+          const decoded = decodeValue(svc.uuid, ch.uuid, buf);
+
+          notifCount += 1;
+          notifCountEl.textContent = String(notifCount);
+
+          if (!firstNotifySet) {
+            firstNotifySet = true;
+            const ms = Math.round(performance.now() - connectT0);
+            session.profiling.firstNotifyMs = ms;
+            tFirstNotif.textContent = `${ms} ms`;
+          }
+
+          log("INFO", "NOTIFY", {
+            msg: "notification",
+            service: svc.uuid,
+            characteristic: ch.uuid,
+            hex: hx,
+            ascii: asc,
+            decoded,
+            size: buf.byteLength
           });
+
+          cmdOut.textContent = `Notif: hex=[${clampStr(hx, 180)}] ascii="${clampStr(asc, 90)}"` + (decoded ? ` dec=${JSON.stringify(decoded)}` : "");
         });
 
-        // “Analyse” initiale : tente une lecture si lecture possible (souvent utile pour Battery Level)
-        if (ch.properties.read) {
-          const buf = await safeReadValue(ch);
-          if (buf) {
-            outEl.textContent = `Valeur: hex=[${hex(buf)}] ascii="${ascii(buf)}"`;
-          }
-        }
+        await ch.startNotifications();
+        log("INFO", "CMD_NOTIFY_ON", { msg: "notifications enabled", service: svc.uuid, characteristic: ch.uuid });
+      } catch (e) {
+        log("ERROR", "CMD_NOTIFY_ON_ERR", { msg: String(e) });
+        alert(`Notif ON impossible: ${String(e)}`);
       }
     }
-  }
 
-  function onDisconnected() {
-    log("[INFO] Déconnecté.");
-    setState("Déconnecté");
-    btnDisconnect.disabled = true;
-    btnRefresh.disabled = true;
-  }
+    async function cmdNotifyOff() {
+      if (!server?.connected) return;
+      const u = cmdCharUuid.value.trim();
 
-  async function connectFlow() {
-    if (!supportsWebBluetooth()) {
-      alert("Web Bluetooth indisponible dans ce navigateur.");
-      return;
+      try {
+        const { svc, ch } = await getCharByUuid(u);
+        await ch.stopNotifications();
+        log("INFO", "CMD_NOTIFY_OFF", { msg: "notifications disabled", service: svc.uuid, characteristic: ch.uuid });
+      } catch (e) {
+        log("ERROR", "CMD_NOTIFY_OFF_ERR", { msg: String(e) });
+        alert(`Notif OFF impossible: ${String(e)}`);
+      }
     }
 
-    const filters = [];
-    const optionalServices = [];
-
-    // Services “utiles” pour analyse
-    optionalServices.push("device_information"); // 0x180A (si supporté)
-    optionalServices.push("battery_service");    // 0x180F (si supporté)
-
-    const extra = extraService.value.trim();
-    if (extra) optionalServices.push(extra);
-
-    if (scanMode.value === "battery") {
-      filters.push({ services: ["battery_service"] });
-    } else if (scanMode.value === "deviceInfo") {
-      filters.push({ services: ["device_information"] });
+    function exportJson() {
+      const data = JSON.stringify(session, null, 2);
+      const name = `ble-session-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;
+      downloadText(name, data, "application/json");
+      log("INFO", "EXPORT_JSON", { msg: "export json", filename: name, bytes: data.length });
     }
 
-    const options = (scanMode.value === "acceptAll")
-      ? { acceptAllDevices: true, optionalServices }
-      : { filters, optionalServices };
+    function exportCsv() {
+      // Events CSV
+      const cols = ["ts","lvl","type","msg","service","characteristic","hex","ascii","decoded","size"];
+      const rows = [cols.join(",")];
 
-    log("[INFO] Demande de périphérique…");
-    device = await navigator.bluetooth.requestDevice(options);
+      for (const e of session.events) {
+        const decoded = e.decoded ? JSON.stringify(e.decoded) : "";
+        const row = [
+          csvEscape(e.ts || ""),
+          csvEscape(e.lvl || ""),
+          csvEscape(e.type || ""),
+          csvEscape(e.msg || ""),
+          csvEscape(e.service || ""),
+          csvEscape(e.characteristic || ""),
+          csvEscape(e.hex || ""),
+          csvEscape(e.ascii || ""),
+          csvEscape(decoded),
+          csvEscape(String(e.size ?? ""))
+        ].join(",");
+        rows.push(row);
+      }
 
-    devName.textContent = device.name || "(sans nom)";
-    devId.textContent = device.id || "—";
-    device.addEventListener("gattserverdisconnected", onDisconnected);
-
-    log(`[INFO] Sélection: ${device.name || "(sans nom)"} id=${device.id || "—"}`);
-    setState("Connexion…");
-
-    server = await device.gatt.connect();
-    setState("Connecté");
-    btnDisconnect.disabled = false;
-    btnRefresh.disabled = false;
-
-    log("[INFO] GATT connecté. Inventaire services…");
-    await renderGatt();
-
-    // Exemple d’analyse “standard”: Battery Level si présent
-    try {
-      const battSvc = await server.getPrimaryService("battery_service");
-      const battChar = await battSvc.getCharacteristic("battery_level");
-      const dv = await battChar.readValue();
-      const level = dv.getUint8(0);
-      log(`[ANALYSE] Batterie: ${level}%`);
-    } catch (_) {
-      // Non bloquant
+      const data = rows.join("\n");
+      const name = `ble-events-${new Date().toISOString().replace(/[:.]/g,'-')}.csv`;
+      downloadText(name, data, "text/csv");
+      log("INFO", "EXPORT_CSV", { msg: "export csv", filename: name, rows: rows.length });
     }
-  }
 
-  btnScan.addEventListener("click", async () => {
-    try {
-      await connectFlow();
-    } catch (e) {
-      log("[ERR]", String(e));
-      setState("Déconnecté");
+    // Wire UI
+    btnPick.addEventListener("click", async () => {
+      try { await pickAndConnect(); }
+      catch (e) {
+        uiSetState("Déconnecté");
+        enableConnectedUi(false);
+        log("ERROR", "CONNECT_ERR", { msg: String(e) });
+        alert(String(e));
+      }
+    });
+
+    btnDisconnect.addEventListener("click", disconnect);
+    btnRefresh.addEventListener("click", refreshGattInventory);
+    btnClearLog.addEventListener("click", () => { logEl.textContent = ""; });
+
+    btnExportJson.addEventListener("click", exportJson);
+    btnExportCsv.addEventListener("click", exportCsv);
+
+    btnCmdRead.addEventListener("click", cmdRead);
+    btnCmdWrite.addEventListener("click", cmdWrite);
+    btnCmdNotifyOn.addEventListener("click", cmdNotifyOn);
+    btnCmdNotifyOff.addEventListener("click", cmdNotifyOff);
+
+    // Initial diagnostics
+    if (!navigator.bluetooth) {
+      log("ERROR", "NO_WEB_BLUETOOTH", { msg: "navigator.bluetooth absent. Ouvrir en Bluefy avec Web Bluetooth actif + HTTPS." });
+      tree.textContent = "Web Bluetooth indisponible (navigator.bluetooth absent).";
+    } else {
+      log("INFO", "READY", { msg: "Web Bluetooth détecté. Sélectionnez un périphérique." });
+      tree.textContent = "Prêt. Cliquez sur « Sélectionner périphérique ».";
     }
-  });
-
-  btnDisconnect.addEventListener("click", async () => {
-    try {
-      if (device?.gatt?.connected) device.gatt.disconnect();
-    } catch (e) {
-      log("[ERR]", String(e));
-    }
-    onDisconnected();
-  });
-
-  btnRefresh.addEventListener("click", async () => {
-    try {
-      await renderGatt();
-      log("[INFO] Services rafraîchis.");
-    } catch (e) {
-      log("[ERR]", String(e));
-    }
-  });
-
-  btnClearLog.addEventListener("click", () => {
-    logEl.textContent = "";
-  });
-
-  // Diagnostic initial
-  if (!supportsWebBluetooth()) {
-    log("[WARN] navigator.bluetooth absent. Essayez Bluefy / un navigateur compatible Web Bluetooth.");
-  } else {
-    log("[OK] Web Bluetooth détecté. Cliquez sur « Scanner / Sélectionner ».");
-  }
-})();
-</script>
+  </script>
 </body>
 </html>
