@@ -199,6 +199,8 @@
     let firstNotifySet = false;
     let notifCount = 0;
 
+    const MAX_WRITE_BYTES = 244;
+
     function uiSetState(s) { devState.textContent = s; }
 
     function log(lvl, type, obj = {}) {
@@ -455,6 +457,24 @@
       }
     }
 
+    function ensureWritePayloadSize(buf) {
+      if (buf.byteLength === 0) throw new Error("Payload vide: écriture annulée.");
+      if (buf.byteLength > MAX_WRITE_BYTES) {
+        throw new Error(`Payload trop long (${buf.byteLength} octets, max ${MAX_WRITE_BYTES}).`);
+      }
+    }
+
+    function confirmWriteIntent({ characteristic, writeType, mode, size }) {
+      const ok = confirm(
+        `Confirmer l'écriture BLE ?\n` +
+        `Characteristic: ${characteristic}\n` +
+        `Type: ${writeType}\n` +
+        `Mode: ${mode}\n` +
+        `Taille: ${size} octet(s)`
+      );
+      if (!ok) throw new Error("Écriture annulée par l'utilisateur.");
+    }
+
     async function cmdWrite() {
       if (!server?.connected) return;
       const u = cmdCharUuid.value.trim();
@@ -472,21 +492,27 @@
         if (mode === "hex") buf = bufFromHex(data);
         else buf = bufFromAscii(data);
 
+        ensureWritePayloadSize(buf);
+        confirmWriteIntent({ characteristic: ch.uuid, writeType, mode, size: buf.byteLength });
+
         const dv = new DataView(buf);
 
         if (writeType === "write") await ch.writeValue(dv);
         else await ch.writeValueWithoutResponse(dv);
 
+        cmdOut.textContent = `Écriture OK (${buf.byteLength} octets).`;
         log("INFO", "CMD_WRITE", {
           msg: "cmd write",
           service: svc.uuid,
           characteristic: ch.uuid,
           writeType,
           dataMode: mode,
+          size: buf.byteLength,
           hex: hexFromBuf(buf),
           ascii: asciiFromBuf(buf)
         });
       } catch (e) {
+        cmdOut.textContent = `Erreur: ${String(e)}`;
         log("ERROR", "CMD_WRITE_ERR", { msg: String(e) });
         alert(`Écriture impossible: ${String(e)}`);
       }
