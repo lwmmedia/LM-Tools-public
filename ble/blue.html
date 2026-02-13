@@ -24,6 +24,7 @@
     .btn-s { padding: 6px 10px; font-size: 12px; border-radius: 10px; }
     textarea { width:100%; min-height: 70px; border:1px solid #ccc; border-radius: 10px; padding: 10px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
     .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    #seenDevices { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.35; }
     @media (max-width: 800px) { .grid2 { grid-template-columns: 1fr; } .kv{grid-template-columns:120px 1fr;} }
   </style>
 </head>
@@ -78,6 +79,12 @@
       <div class="muted">Optional services (CSV UUID)</div>
       <input id="optSvcs" placeholder="battery_service,device_information,..." style="min-width:320px;" />
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Périphériques présents (session)</h2>
+    <div class="muted">Liste des périphériques sélectionnés pendant cette session, avec identifiant et état.</div>
+    <div id="seenDevices" class="muted" style="margin-top:8px;">Aucun périphérique sélectionné.</div>
   </div>
 
   <div class="card">
@@ -160,6 +167,7 @@
 
     const tree = $("tree");
     const logEl = $("log");
+    const seenDevices = $("seenDevices");
 
     const cmdCharUuid = $("cmdCharUuid");
     const btnCmdRead = $("btnCmdRead");
@@ -192,7 +200,8 @@
       inventory: {
         services: [] // populated after refresh
       },
-      events: [] // {ts, lvl, type, ...}
+      events: [], // {ts, lvl, type, ...}
+      seenDevices: [] // [{id, name, firstSeen, lastSeen, state}]
     };
 
     let connectT0 = 0;
@@ -212,6 +221,34 @@
       logEl.scrollTop = logEl.scrollHeight;
     }
 
+    function upsertSeenDevice(state) {
+      if (!device) return;
+      const id = device.id || "—";
+      const name = device.name || "(sans nom)";
+      const now = nowIso();
+      let row = session.seenDevices.find(d => d.id === id);
+      if (!row) {
+        row = { id, name, firstSeen: now, lastSeen: now, state };
+        session.seenDevices.push(row);
+      } else {
+        row.name = name;
+        row.lastSeen = now;
+        row.state = state;
+      }
+      renderSeenDevices();
+    }
+
+    function renderSeenDevices() {
+      if (!session.seenDevices.length) {
+        seenDevices.textContent = "Aucun périphérique sélectionné.";
+        return;
+      }
+      const lines = session.seenDevices.map((d, i) =>
+        `${i + 1}. ${d.name} | id=${d.id} | état=${d.state} | vu=${d.lastSeen}`
+      );
+      seenDevices.textContent = lines.join("\n");
+    }
+
     function enableConnectedUi(connected) {
       btnDisconnect.disabled = !connected;
       btnRefresh.disabled = !connected;
@@ -228,6 +265,7 @@
       uiSetState("Déconnecté");
       enableConnectedUi(false);
       tree.textContent = "Non connecté.";
+      upsertSeenDevice("déconnecté");
       log("INFO", "DISCONNECT", { msg: "GATT disconnected" });
     }
 
@@ -307,6 +345,7 @@
       tConnect.textContent = `${connectMs} ms`;
       uiSetState("Connecté");
       enableConnectedUi(true);
+      upsertSeenDevice("connecté");
 
       log("INFO", "CONNECT", { msg: "GATT connected", connectMs });
 
@@ -517,6 +556,8 @@
     btnCmdNotifyOff.addEventListener("click", cmdNotifyOff);
 
     // Initial diagnostics
+    renderSeenDevices();
+
     if (!navigator.bluetooth) {
       log("ERROR", "NO_WEB_BLUETOOTH", { msg: "navigator.bluetooth absent. Ouvrir en Bluefy avec Web Bluetooth actif + HTTPS." });
       tree.textContent = "Web Bluetooth indisponible (navigator.bluetooth absent).";
