@@ -141,6 +141,7 @@
     } from './utils.js';
 
     import { decodeValue } from './parsers.js';
+    import { createBleCommandHandlers } from './commands.js';
 
     function createBleCommandHandlers(deps) {
       const {
@@ -377,6 +378,7 @@
     let firstNotifySet = false;
     let notifCount = 0;
 
+    const MAX_WRITE_BYTES = 244;
 
     function uiSetState(s) { devState.textContent = s; }
 
@@ -660,6 +662,91 @@
           decoded,
           size
         });
+        throw new Error("Characteristic introuvable via getCharacteristic (UUID ou droits).");
+      })();
+    }
+
+    async function cmdRead() {
+      if (!server?.connected) return;
+      const u = cmdCharUuid.value.trim();
+      try {
+        const { svc, ch } = await getCharByUuid(u);
+        if (!ch.properties.read) throw new Error("Lecture non supportée par cette caractéristique.");
+        const buf = await safeReadValue(ch);
+        if (!buf) throw new Error("Lecture impossible (droits/erreur).");
+
+        const hx = hexFromBuf(buf);
+        const asc = asciiFromBuf(buf);
+        const decoded = decodeValue(svc.uuid, ch.uuid, buf);
+
+        cmdOut.textContent = `Valeur: hex=[${hx}] ascii="${asc}"` + (decoded ? ` dec=${JSON.stringify(decoded)}` : "");
+        log("INFO", "CMD_READ", { msg: "cmd read", service: svc.uuid, characteristic: ch.uuid, hex: hx, ascii: asc, decoded });
+      } catch (e) {
+        cmdOut.textContent = `Erreur: ${String(e)}`;
+        log("ERROR", "CMD_READ_ERR", { msg: String(e) });
+      }
+    }
+
+    function ensureWritePayloadSize(buf) {
+      if (buf.byteLength === 0) throw new Error("Payload vide: écriture annulée.");
+      if (buf.byteLength > MAX_WRITE_BYTES) {
+        throw new Error(`Payload trop long (${buf.byteLength} octets, max ${MAX_WRITE_BYTES}).`);
+      }
+    }
+
+    function confirmWriteIntent({ characteristic, writeType, mode, size }) {
+      const ok = confirm(
+        `Confirmer l'écriture BLE ?\n` +
+        `Characteristic: ${characteristic}\n` +
+        `Type: ${writeType}\n` +
+        `Mode: ${mode}\n` +
+        `Taille: ${size} octet(s)`
+      );
+      if (!ok) throw new Error("Écriture annulée par l'utilisateur.");
+    }
+
+    async function cmdWrite() {
+      if (!server?.connected) return;
+      const u = cmdCharUuid.value.trim();
+      const mode = cmdWriteMode.value;
+      const writeType = cmdWriteType.value;
+      const data = cmdWriteData.value || "";
+
+      try {
+        const { svc, ch } = await getCharByUuid(u);
+
+        if (writeType === "write" && !ch.properties.write) throw new Error("write non supporté.");
+        if (writeType === "writeWithoutResponse" && !ch.properties.writeWithoutResponse) throw new Error("writeWithoutResponse non supporté.");
+
+        let buf;
+        if (mode === "hex") buf = bufFromHex(data);
+        else buf = bufFromAscii(data);
+
+        ensureWritePayloadSize(buf);
+        confirmWriteIntent({ characteristic: ch.uuid, writeType, mode, size: buf.byteLength });
+
+        const dv = new DataView(buf);
+
+        if (writeType === "write") await ch.writeValue(dv);
+        else await ch.writeValueWithoutResponse(dv);
+
+        cmdOut.textContent = `Écriture OK (${buf.byteLength} octets).`;
+        log("INFO", "CMD_WRITE", {
+          msg: "cmd write",
+          service: svc.uuid,
+          characteristic: ch.uuid,
+          writeType,
+          dataMode: mode,
+          size: buf.byteLength,
+          hex: hexFromBuf(buf),
+          ascii: asciiFromBuf(buf)
+        });
+      } catch (e) {
+        cmdOut.textContent = `Erreur: ${String(e)}`;
+        log("ERROR", "CMD_WRITE_ERR", { msg: String(e) });
+        alert(`Écriture impossible: ${String(e)}`);
+      }
+    }
 
         cmdOut.textContent = `Notif: hex=[${clampStr(hx, 180)}] ascii="${clampStr(asc, 90)}"` + (decoded ? ` dec=${JSON.stringify(decoded)}` : "");
       }
