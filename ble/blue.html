@@ -24,6 +24,7 @@
     .btn-s { padding: 6px 10px; font-size: 12px; border-radius: 10px; }
     textarea { width:100%; min-height: 70px; border:1px solid #ccc; border-radius: 10px; padding: 10px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
     .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    #seenDevices { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.35; }
     @media (max-width: 800px) { .grid2 { grid-template-columns: 1fr; } .kv{grid-template-columns:120px 1fr;} }
   </style>
 </head>
@@ -81,6 +82,12 @@
   </div>
 
   <div class="card">
+    <h2>Périphériques présents (session)</h2>
+    <div class="muted">Liste des périphériques sélectionnés pendant cette session, avec identifiant et état.</div>
+    <div id="seenDevices" class="muted" style="margin-top:8px;">Aucun périphérique sélectionné.</div>
+  </div>
+
+  <div class="card">
     <h2>Commandes (lecture / écriture ciblée)</h2>
     <div class="muted">
       Renseignez une caractéristique (UUID) pour agir directement (utile quand l’inventaire est long).
@@ -134,6 +141,7 @@
     } from './utils.js';
 
     import { decodeValue } from './parsers.js';
+    import { createBleCommandHandlers } from './commands.js';
 
     const $ = (id) => document.getElementById(id);
 
@@ -159,6 +167,7 @@
 
     const tree = $("tree");
     const logEl = $("log");
+    const seenDevices = $("seenDevices");
 
     const cmdCharUuid = $("cmdCharUuid");
     const btnCmdRead = $("btnCmdRead");
@@ -191,7 +200,8 @@
       inventory: {
         services: [] // populated after refresh
       },
-      events: [] // {ts, lvl, type, ...}
+      events: [], // {ts, lvl, type, ...}
+      seenDevices: [] // [{id, name, firstSeen, lastSeen, state}]
     };
 
     let connectT0 = 0;
@@ -212,6 +222,34 @@
       logEl.scrollTop = logEl.scrollHeight;
     }
 
+    function upsertSeenDevice(state) {
+      if (!device) return;
+      const id = device.id || "—";
+      const name = device.name || "(sans nom)";
+      const now = nowIso();
+      let row = session.seenDevices.find(d => d.id === id);
+      if (!row) {
+        row = { id, name, firstSeen: now, lastSeen: now, state };
+        session.seenDevices.push(row);
+      } else {
+        row.name = name;
+        row.lastSeen = now;
+        row.state = state;
+      }
+      renderSeenDevices();
+    }
+
+    function renderSeenDevices() {
+      if (!session.seenDevices.length) {
+        seenDevices.textContent = "Aucun périphérique sélectionné.";
+        return;
+      }
+      const lines = session.seenDevices.map((d, i) =>
+        `${i + 1}. ${d.name} | id=${d.id} | état=${d.state} | vu=${d.lastSeen}`
+      );
+      seenDevices.textContent = lines.join("\n");
+    }
+
     function enableConnectedUi(connected) {
       btnDisconnect.disabled = !connected;
       btnRefresh.disabled = !connected;
@@ -228,6 +266,7 @@
       uiSetState("Déconnecté");
       enableConnectedUi(false);
       tree.textContent = "Non connecté.";
+      upsertSeenDevice("déconnecté");
       log("INFO", "DISCONNECT", { msg: "GATT disconnected" });
     }
 
@@ -307,6 +346,7 @@
       tConnect.textContent = `${connectMs} ms`;
       uiSetState("Connecté");
       enableConnectedUi(true);
+      upsertSeenDevice("connecté");
 
       log("INFO", "CONNECT", { msg: "GATT connected", connectMs });
 
@@ -418,20 +458,41 @@
       onDisconnected();
     }
 
-    function getCharByUuid(uuid) {
-      // Fetch on-demand: iterate services and try getCharacteristic where possible
-      // This avoids caching actual characteristic objects in session (serializable).
-      return (async () => {
-        const u = (uuid || "").trim().toLowerCase();
-        if (!u) throw new Error("Characteristic UUID vide.");
+    const { cmdRead, cmdWrite, cmdNotifyOn, cmdNotifyOff } = createBleCommandHandlers({
+      getServer: () => server,
+      getCmdCharUuid: () => cmdCharUuid.value.trim(),
+      getCmdWriteMode: () => cmdWriteMode.value,
+      getCmdWriteType: () => cmdWriteType.value,
+      getCmdWriteData: () => cmdWriteData.value || "",
+      setCmdOut: (text) => { cmdOut.textContent = text; },
+      log,
+      decodeValue,
+      safeReadValue,
+      hexFromBuf,
+      asciiFromBuf,
+      bufFromHex,
+      bufFromAscii,
+      clampStr,
+      onNotify: ({ svcUuid, chUuid, buf, hx, asc, decoded, size }) => {
+        notifCount += 1;
+        notifCountEl.textContent = String(notifCount);
 
-        const services = await server.getPrimaryServices();
-        for (const svc of services) {
-          try {
-            const ch = await svc.getCharacteristic(u);
-            if (ch) return { svc, ch };
-          } catch (_) { /* continue */ }
+        if (!firstNotifySet) {
+          firstNotifySet = true;
+          const ms = Math.round(performance.now() - connectT0);
+          session.profiling.firstNotifyMs = ms;
+          tFirstNotif.textContent = `${ms} ms`;
         }
+
+        log("INFO", "NOTIFY", {
+          msg: "notification",
+          service: svcUuid,
+          characteristic: chUuid,
+          hex: hx,
+          ascii: asc,
+          decoded,
+          size
+        });
         throw new Error("Characteristic introuvable via getCharacteristic (UUID ou droits).");
       })();
     }
@@ -518,65 +579,9 @@
       }
     }
 
-    async function cmdNotifyOn() {
-      if (!server?.connected) return;
-      const u = cmdCharUuid.value.trim();
-
-      try {
-        const { svc, ch } = await getCharByUuid(u);
-        if (!(ch.properties.notify || ch.properties.indicate)) throw new Error("Notifications/indications non supportées.");
-
-        ch.addEventListener("characteristicvaluechanged", (ev) => {
-          const dv = ev.target.value;
-          const buf = dv.buffer.slice(dv.byteOffset, dv.byteOffset + dv.byteLength);
-          const hx = hexFromBuf(buf);
-          const asc = asciiFromBuf(buf);
-          const decoded = decodeValue(svc.uuid, ch.uuid, buf);
-
-          notifCount += 1;
-          notifCountEl.textContent = String(notifCount);
-
-          if (!firstNotifySet) {
-            firstNotifySet = true;
-            const ms = Math.round(performance.now() - connectT0);
-            session.profiling.firstNotifyMs = ms;
-            tFirstNotif.textContent = `${ms} ms`;
-          }
-
-          log("INFO", "NOTIFY", {
-            msg: "notification",
-            service: svc.uuid,
-            characteristic: ch.uuid,
-            hex: hx,
-            ascii: asc,
-            decoded,
-            size: buf.byteLength
-          });
-
-          cmdOut.textContent = `Notif: hex=[${clampStr(hx, 180)}] ascii="${clampStr(asc, 90)}"` + (decoded ? ` dec=${JSON.stringify(decoded)}` : "");
-        });
-
-        await ch.startNotifications();
-        log("INFO", "CMD_NOTIFY_ON", { msg: "notifications enabled", service: svc.uuid, characteristic: ch.uuid });
-      } catch (e) {
-        log("ERROR", "CMD_NOTIFY_ON_ERR", { msg: String(e) });
-        alert(`Notif ON impossible: ${String(e)}`);
+        cmdOut.textContent = `Notif: hex=[${clampStr(hx, 180)}] ascii="${clampStr(asc, 90)}"` + (decoded ? ` dec=${JSON.stringify(decoded)}` : "");
       }
-    }
-
-    async function cmdNotifyOff() {
-      if (!server?.connected) return;
-      const u = cmdCharUuid.value.trim();
-
-      try {
-        const { svc, ch } = await getCharByUuid(u);
-        await ch.stopNotifications();
-        log("INFO", "CMD_NOTIFY_OFF", { msg: "notifications disabled", service: svc.uuid, characteristic: ch.uuid });
-      } catch (e) {
-        log("ERROR", "CMD_NOTIFY_OFF_ERR", { msg: String(e) });
-        alert(`Notif OFF impossible: ${String(e)}`);
-      }
-    }
+    });
 
     function exportJson() {
       const data = JSON.stringify(session, null, 2);
@@ -637,6 +642,8 @@
     btnCmdNotifyOff.addEventListener("click", cmdNotifyOff);
 
     // Initial diagnostics
+    renderSeenDevices();
+
     if (!navigator.bluetooth) {
       log("ERROR", "NO_WEB_BLUETOOTH", { msg: "navigator.bluetooth absent. Ouvrir en Bluefy avec Web Bluetooth actif + HTTPS." });
       tree.textContent = "Web Bluetooth indisponible (navigator.bluetooth absent).";
