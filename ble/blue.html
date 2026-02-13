@@ -84,6 +84,12 @@
   <div class="card">
     <h2>Périphériques présents (session)</h2>
     <div class="muted">Liste des périphériques sélectionnés pendant cette session, avec identifiant et état.</div>
+    <div class="row" style="margin-top:8px;">
+      <select id="seenDevicesSelect" style="min-width:420px;" disabled>
+        <option value="">Aucun périphérique</option>
+      </select>
+      <button class="btn-s" id="btnSeenDeviceUse" disabled>Afficher sélection</button>
+    </div>
     <div id="seenDevices" class="muted" style="margin-top:8px;">Aucun périphérique sélectionné.</div>
   </div>
 
@@ -168,6 +174,8 @@
     const tree = $("tree");
     const logEl = $("log");
     const seenDevices = $("seenDevices");
+    const seenDevicesSelect = $("seenDevicesSelect");
+    const btnSeenDeviceUse = $("btnSeenDeviceUse");
 
     const cmdCharUuid = $("cmdCharUuid");
     const btnCmdRead = $("btnCmdRead");
@@ -209,7 +217,6 @@
     let firstNotifySet = false;
     let notifCount = 0;
 
-    const MAX_WRITE_BYTES = 244;
 
     function uiSetState(s) { devState.textContent = s; }
 
@@ -242,12 +249,40 @@
     function renderSeenDevices() {
       if (!session.seenDevices.length) {
         seenDevices.textContent = "Aucun périphérique sélectionné.";
+        seenDevicesSelect.innerHTML = '<option value="">Aucun périphérique</option>';
+        seenDevicesSelect.disabled = true;
+        btnSeenDeviceUse.disabled = true;
         return;
       }
+
       const lines = session.seenDevices.map((d, i) =>
         `${i + 1}. ${d.name} | id=${d.id} | état=${d.state} | vu=${d.lastSeen}`
       );
       seenDevices.textContent = lines.join("\n");
+
+      const selectedId = seenDevicesSelect.value;
+      const options = ['<option value="">Choisir un périphérique…</option>'];
+      for (const d of session.seenDevices) {
+        options.push(`<option value="${d.id}">${d.name} (${d.id}) — ${d.state}</option>`);
+      }
+      seenDevicesSelect.innerHTML = options.join("");
+      seenDevicesSelect.disabled = false;
+      btnSeenDeviceUse.disabled = false;
+
+      if (session.seenDevices.some(d => d.id === selectedId)) {
+        seenDevicesSelect.value = selectedId;
+      }
+    }
+
+    function showSelectedSeenDevice() {
+      const id = seenDevicesSelect.value;
+      if (!id) return;
+      const d = session.seenDevices.find(x => x.id === id);
+      if (!d) return;
+      devName.textContent = d.name;
+      devId.textContent = d.id;
+      cmdOut.textContent = `Sélection: ${d.name} (${d.id}) - ${d.state}`;
+      log("INFO", "SEEN_DEVICE_SELECT", { msg: "seen device selected", id: d.id, name: d.name, state: d.state });
     }
 
     function enableConnectedUi(connected) {
@@ -550,6 +585,9 @@
 
     btnExportJson.addEventListener("click", exportJson);
     btnExportCsv.addEventListener("click", exportCsv);
+
+    btnSeenDeviceUse.addEventListener("click", showSelectedSeenDevice);
+    seenDevicesSelect.addEventListener("change", showSelectedSeenDevice);
 
     btnCmdRead.addEventListener("click", cmdRead);
     btnCmdWrite.addEventListener("click", cmdWrite);
