@@ -1,0 +1,27 @@
+# CODEOWNERS — Définit les réviseurs automatiques par zone du dépôt.
+# Documentation : https://docs.github.com/fr/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Syntaxe : <pattern>  <@utilisateur ou @org/équipe>
+# La dernière règle correspondante a la priorité.
+
+# Mainteneur principal — responsable de l'ensemble du dépôt
+*                           @lwmmedia
+
+# Scripts Windows (PowerShell et Batch)
+/scripts/windows/           @lwmmedia
+
+# Scripts Python
+/scripts/python/            @lwmmedia
+
+# Scripts Bash / Linux
+/scripts/bash/              @lwmmedia
+
+# Analyseur BLE
+/ble/                       @lwmmedia
+
+# Fichiers de gouvernance et communauté
+/CODE_OF_CONDUCT.md         @lwmmedia
+/CONTRIBUTING.md            @lwmmedia
+/SECURITY.md                @lwmmedia
+/LICENSE                    @lwmmedia
+/.github/                   @lwmmedia

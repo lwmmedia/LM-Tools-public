@@ -1,0 +1,63 @@
+name: Demande de Fonctionnalité
+description: Proposez une idée ou une amélioration pour LM-Tools
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de proposer une amélioration ! Avant de soumettre, vérifiez les [issues existantes](https://github.com/lwmmedia/LM-Tools/issues) pour éviter les doublons.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème ou besoin
+      description: Quel problème souhaitez-vous résoudre ? Ou quelle tâche voulez-vous faciliter ?
+      placeholder: "Ex: Il n'existe pas de script simple pour nettoyer les fichiers temporaires sur Linux..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution proposée
+      description: Décrivez la fonctionnalité ou le script que vous souhaitez voir ajouté.
+      placeholder: "Ex: Un script Bash qui supprime les fichiers temporaires dans /tmp avec une option de confirmation..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type de contribution
+      options:
+        - Nouveau script PowerShell / Batch (Windows)
+        - Nouveau script Python
+        - Nouveau script Bash (Linux/Unix)
+        - Amélioration d'un script existant
+        - Amélioration de la documentation
+        - Autre
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives envisagées
+      description: Avez-vous envisagé d'autres approches ou solutions existantes ?
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte supplémentaire
+      description: Tout élément qui pourrait aider à comprendre votre demande (captures d'écran, liens, exemples de code...).
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Liste de vérification
+      options:
+        - label: J'ai vérifié qu'une demande similaire n'existe pas déjà
+          required: true
+        - label: Cette fonctionnalité respecte les bonnes pratiques de sécurité du projet
+          required: true
