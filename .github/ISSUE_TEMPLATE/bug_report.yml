@@ -1,0 +1,84 @@
+name: Rapport de Bug
+description: Signalez un problème pour nous aider à améliorer LM-Tools
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de signaler ce bug ! Vérifiez d'abord les [issues existantes](https://github.com/lwmmedia/LM-Tools/issues) pour éviter les doublons.
+
+  - type: dropdown
+    id: script
+    attributes:
+      label: Script ou outil concerné
+      description: Quel script ou outil pose problème ?
+      options:
+        - Windows Maintenance (Windows-Maintenance.ps1)
+        - Optimiseur d'images (OptimisationImageGUI.py)
+        - Analyseur BLE (ble/)
+        - Script Bash
+        - Script Batch
+        - Autre (précisez dans la description)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description du problème
+      description: Décrivez clairement ce qui se passe.
+      placeholder: "Ex: Le script plante au lancement avec un message d'erreur..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Étapes pour reproduire
+      description: Listez les étapes exactes pour reproduire le bug.
+      placeholder: |
+        1. Lancer le script avec '...'
+        2. Cliquer sur '...'
+        3. Voir l'erreur
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportement attendu
+      description: Que devrait-il se passer normalement ?
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environnement
+      description: Informations sur votre système.
+      value: |
+        - OS : [ex. Windows 11 23H2 / Ubuntu 24.04]
+        - PowerShell / Python / Bash version :
+        - Droits d'exécution (admin / utilisateur) :
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Messages d'erreur et logs
+      description: Collez ici le message d'erreur complet ou le contenu des fichiers de log.
+      render: shell
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Liste de vérification
+      options:
+        - label: J'ai vérifié que ce bug n'a pas déjà été signalé
+          required: true
+        - label: J'ai consulté la documentation disponible
+          required: true
+        - label: J'ai testé avec la dernière version du script
+          required: true

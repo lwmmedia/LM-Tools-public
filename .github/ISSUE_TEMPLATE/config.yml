@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question ou discussion
+    url: https://github.com/lwmmedia/LM-Tools/issues/new?labels=question
+    about: Pour les questions générales, ouvrez une issue avec le label "question".
+  - name: Vulnérabilité de sécurité
+    url: https://github.com/lwmmedia/LM-Tools/security/advisories/new
+    about: Pour signaler une faille de sécurité de manière responsable (ne pas créer d'issue publique).
