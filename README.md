@@ -12,20 +12,22 @@
 | :--- | :--- | :--- | :--- |
 | **Windows Maintenance** | 🪟 Win 10/11 | PowerShell | Maintenance complète : SFC, DISM, nettoyage disque et fichiers temporaires. |
 | **Optimiseur d'images** | 🐍 Multi | Python | Optimisation et conversion d'images JPG/JPEG avec interface graphique. |
-| **System Info (Linux)** | 🐧 Linux | Bash | Affiche l'utilisateur, l'OS, le kernel, l'uptime et l'utilisation des ressources. |
+| **Info Système (Linux)** | 🐧 Linux | Bash | Affiche l'utilisateur, l'OS, le kernel, l'uptime et l'utilisation des ressources. |
+| **Sauvegarde** | 🐧 Linux | Bash | Crée une sauvegarde compressée (tar.gz) d'un répertoire avec timestamp. |
 | **Analyseur de Texte** | 🐍 Multi | Python | Génère des statistiques (lignes, mots, fréquences) sur un fichier texte. |
 | **Calculatrice CLI** | 🐍 Multi | Python | Utilitaire de calcul simple en ligne de commande. |
+| **Info Système (Windows)** | 🪟 Win | Batch | Affiche les informations système Windows de base. |
+| **Processus** | 🪟 Win | PowerShell | Affiche le top 10 des processus par utilisation mémoire. |
 
 ## 📂 Structure du Dépôt
 
 Le projet est organisé de manière simple et claire par type de langage :
 
 * **[`/scripts`](./scripts)** : Dossier principal contenant tous les scripts classés par langage :
-  * [`bash`](./scripts/bash) : Scripts Linux/Unix (sauvegarde, info système)
-  * [`python`](./scripts/python) : Scripts multi-plateformes (analyse de texte, optimisation d'images)
-  * [`windows`](./scripts/windows) : Scripts Windows (maintenance, utilitaires système)
+  * [`bash`](./scripts/bash) : Scripts Linux/Unix (info système, sauvegarde)
+  * [`python`](./scripts/python) : Scripts multi-plateformes (analyse de texte, optimisation d'images, calculatrice)
+  * [`windows`](./scripts/windows) : Scripts Windows (maintenance, info système, processus)
 * **[`/docs`](./docs)** : Documentation complète, incluant les [guides de démarrage](./docs/guide-demarrage.md) et de [contribution](./docs/contribution.md).
-* **[`/examples`](./examples)** : Fichiers de test (comme [`exemple_texte.txt`](./examples/exemple_texte.txt)) pour essayer les scripts immédiatement.
 
 ## 🛠️ Utilisation Rapide
 
