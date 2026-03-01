@@ -1,0 +1,3 @@
+# Exclure le dossier ble/ (interface web Bluetooth) des statistiques de langages GitHub
+# car il n'est pas représentatif du contenu principal du dépôt (Python, PowerShell, Bash)
+ble/* linguist-detectable=false
