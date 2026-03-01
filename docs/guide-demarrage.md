@@ -19,8 +19,7 @@ LM-Tools/
 │   ├── windows/     # Scripts Windows (.bat, .ps1)
 │   ├── python/      # Scripts Python (.py)
 │   └── bash/        # Scripts Bash/Linux (.sh)
-├── docs/            # Documentation
-└── examples/        # Exemples d'utilisation
+└── docs/            # Documentation
 ```
 
 ## Utilisation des scripts
@@ -31,14 +30,14 @@ LM-Tools/
 Double-cliquez sur le fichier ou exécutez depuis l'invite de commandes :
 ```cmd
 cd scripts\windows
-example_info_systeme.bat
+info_systeme.bat
 ```
 
 #### PowerShell (.ps1)
 Exécutez depuis PowerShell :
 ```powershell
 cd scripts\windows
-.\example_processus.ps1
+.\processus.ps1
 ```
 
 **Important** : Vous devrez peut-être autoriser l'exécution de scripts PowerShell :
@@ -54,7 +53,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ```bash
 cd scripts/python
-python example_analyse_texte.py mon_fichier.txt
+python analyse_texte.py mon_fichier.txt
 ```
 
 ### Scripts Bash
@@ -64,8 +63,8 @@ python example_analyse_texte.py mon_fichier.txt
 
 ```bash
 cd scripts/bash
-chmod +x example_info_systeme.sh
-./example_info_systeme.sh
+chmod +x info_systeme.sh
+./info_systeme.sh
 ```
 
 ## Prérequis par plateforme

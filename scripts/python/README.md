@@ -50,7 +50,7 @@ pip install Pillow
 
 ---
 
-### example_analyse_texte.py
+### analyse_texte.py
 **Description**: Utilitaire d'analyse de fichiers texte avec statistiques détaillées.
 
 **Fonctionnalités**:
@@ -62,23 +62,23 @@ pip install Pillow
 **Utilisation**:
 ```bash
 # Avec argument
-python example_analyse_texte.py chemin/vers/fichier.txt
+python analyse_texte.py chemin/vers/fichier.txt
 
 # Mode interactif (sans argument)
-python example_analyse_texte.py
+python analyse_texte.py
 ```
 
 **Exemples**:
 ```bash
-# Analyser le fichier d'exemple
-python example_analyse_texte.py ../../examples/exemple_texte.txt
+# Analyser le fichier de test fourni
+python analyse_texte.py exemple_texte.txt
 ```
 
 **Prérequis**: Python 3.6+ (bibliothèques standard)
 
 ---
 
-### example_calculatrice.py
+### calculatrice.py
 **Description**: Calculatrice simple en ligne de commande.
 
 **Fonctionnalités**:
@@ -89,7 +89,7 @@ python example_analyse_texte.py ../../examples/exemple_texte.txt
 
 **Utilisation**:
 ```bash
-python example_calculatrice.py
+python calculatrice.py
 ```
 
 **Exemples d'opérations**:

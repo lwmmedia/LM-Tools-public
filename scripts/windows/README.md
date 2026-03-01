@@ -85,9 +85,9 @@ MenuInformatiqueLM.bat
 
 ---
 
-### 📊 Scripts d'Exemple
+### 📊 Scripts Utilitaires
 
-#### example_info_systeme.bat
+#### info_systeme.bat
 **Description**: Affiche les informations système Windows de base.
 
 **Fonctionnalités**:
@@ -98,14 +98,14 @@ MenuInformatiqueLM.bat
 
 **Utilisation**:
 ```cmd
-example_info_systeme.bat
+info_systeme.bat
 ```
 
 **Prérequis**: Windows 7 ou supérieur
 
 ---
 
-#### example_processus.ps1
+#### processus.ps1
 **Description**: Affiche le top 10 des processus par utilisation mémoire.
 
 **Fonctionnalités**:
@@ -116,7 +116,7 @@ example_info_systeme.bat
 
 **Utilisation**:
 ```powershell
-.\example_processus.ps1
+.\processus.ps1
 ```
 
 **Prérequis**: PowerShell 3.0+

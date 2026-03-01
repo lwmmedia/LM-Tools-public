@@ -26,7 +26,7 @@ bash nom_du_script.sh
 
 ## Liste des scripts
 
-### example_info_systeme.sh
+### info_systeme.sh
 **Description**: Affiche des informations détaillées sur le système Linux.
 
 **Fonctionnalités**:
@@ -38,15 +38,15 @@ bash nom_du_script.sh
 
 **Utilisation**:
 ```bash
-chmod +x example_info_systeme.sh
-./example_info_systeme.sh
+chmod +x info_systeme.sh
+./info_systeme.sh
 ```
 
 **Prérequis**: Aucun (commandes système standard)
 
 ---
 
-### example_sauvegarde.sh
+### sauvegarde.sh
 **Description**: Crée une sauvegarde compressée (tar.gz) d'un répertoire.
 
 **Fonctionnalités**:
@@ -57,17 +57,17 @@ chmod +x example_info_systeme.sh
 
 **Utilisation**:
 ```bash
-chmod +x example_sauvegarde.sh
-./example_sauvegarde.sh <répertoire_à_sauvegarder> [destination]
+chmod +x sauvegarde.sh
+./sauvegarde.sh <répertoire_à_sauvegarder> [destination]
 ```
 
 **Exemples**:
 ```bash
 # Sauvegarder dans le dossier par défaut ./backups
-./example_sauvegarde.sh /home/user/documents
+./sauvegarde.sh /home/user/documents
 
 # Sauvegarder vers un emplacement spécifique
-./example_sauvegarde.sh /home/user/documents /backup
+./sauvegarde.sh /home/user/documents /backup
 ```
 
 **Prérequis**: tar, gzip (préinstallés sur la plupart des distributions)
